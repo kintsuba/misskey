@@ -15,6 +15,7 @@ import docs from './docs';
 import packFeed from './feed';
 import User from '../../models/user';
 import parseAcct from '../../misc/acct/parse';
+import parseAcctX from '../../misc/acct/parseX';
 import config from '../../config';
 import Note, { pack as packNote } from '../../models/note';
 import getNoteSummary from '../../misc/get-note-summary';
@@ -136,7 +137,7 @@ router.get('/@:user.json', async ctx => {
 //#region for crawlers
 // User
 router.get('/@:user', async (ctx, next) => {
-	const { username, host } = parseAcct(ctx.params.user);
+	const { username, host } = parseAcctX(ctx.params.user);
 	const user = await User.findOne({
 		usernameLower: username.toLowerCase(),
 		host
