@@ -44,6 +44,12 @@
 			<ui-info warn>{{ $t('proxy-account-warn') }}</ui-info>
 		</section>
 		<section>
+			<header><fa :icon="faGhost"/> {{ $t('relay-account-config') }}</header>
+			<ui-info>{{ $t('relay-account-info') }}</ui-info>
+			<ui-input v-model="relayAccount"><span slot="prefix">@</span>{{ $t('relay-account-username') }}<span slot="desc">{{ $t('relay-account-username-desc') }}</span></ui-input>
+			<ui-info warn>{{ $t('relay-account-warn') }}</ui-info>
+		</section>
+		<section>
 			<header><fa :icon="farEnvelope"/> {{ $t('email-config') }}</header>
 			<ui-switch v-model="enableEmail">{{ $t('enable-email') }}<span slot="desc">{{ $t('email-config-info') }}</span></ui-switch>
 			<ui-input v-model="email" type="email" :disabled="!enableEmail">{{ $t('email') }}</ui-input>
@@ -171,6 +177,7 @@ export default Vue.extend({
 			discordClientId: null,
 			discordClientSecret: null,
 			proxyAccount: null,
+			relayAccount: null,
 			inviteCode: null,
 			enableExternalUserRecommendation: false,
 			externalUserRecommendationEngine: null,
@@ -209,6 +216,7 @@ export default Vue.extend({
 			this.recaptchaSiteKey = meta.recaptchaSiteKey;
 			this.recaptchaSecretKey = meta.recaptchaSecretKey;
 			this.proxyAccount = meta.proxyAccount;
+			this.relayAccount = meta.relayAccount;
 			this.enableTwitterIntegration = meta.enableTwitterIntegration;
 			this.twitterConsumerKey = meta.twitterConsumerKey;
 			this.twitterConsumerSecret = meta.twitterConsumerSecret;
@@ -266,6 +274,7 @@ export default Vue.extend({
 				recaptchaSiteKey: this.recaptchaSiteKey,
 				recaptchaSecretKey: this.recaptchaSecretKey,
 				proxyAccount: this.proxyAccount,
+				relayAccount: this.relayAccount,
 				enableTwitterIntegration: this.enableTwitterIntegration,
 				twitterConsumerKey: this.twitterConsumerKey,
 				twitterConsumerSecret: this.twitterConsumerSecret,

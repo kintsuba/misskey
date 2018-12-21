@@ -417,3 +417,8 @@ export async function fetchProxyAccount(): Promise<ILocalUser> {
 	const meta = await fetchMeta();
 	return await User.findOne({ username: meta.proxyAccount, host: null }) as ILocalUser;
 }
+
+export async function fetchRelayAccount(): Promise<ILocalUser> {
+	const meta = await fetchMeta();
+	return await User.findOne({ username: meta.relayAccount, host: null }) as ILocalUser;
+}
