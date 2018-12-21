@@ -34,8 +34,8 @@ function validatePerson(x: any, uri: string) {
 		return new Error('invalid person: object is null');
 	}
 
-	if (x.type != 'Person' && x.type != 'Service') {
-		return new Error(`invalid person: object is not a person or service '${x.type}'`);
+	if (x.type != 'Person' && x.type != 'Service' && x.type != 'Application') {
+		return new Error(`invalid person: object is not a person or service or Application'${x.type}'`);
 	}
 
 	if (typeof x.preferredUsername !== 'string') {
@@ -171,6 +171,7 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<IU
 			uri: person.id,
 			url: person.url,
 			fields,
+			type: object.type,
 			isBot: isBot,
 			isCat: (person as any).isCat === true
 		}) as IRemoteUser;

@@ -141,6 +141,7 @@ export interface IRemoteUser extends IUserBase {
 		publicKeyPem: string;
 	};
 	lastFetchedAt: Date;
+	type?: string;
 	isAdmin: false;
 	isModerator: false;
 }
