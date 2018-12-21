@@ -2,7 +2,7 @@ import $ from 'cafy'; import ID, { transform, transformMany } from '../../../../
 const ms = require('ms');
 import { length } from 'stringz';
 import Note, { INote, isValidCw, pack } from '../../../../models/note';
-import User, { IUser } from '../../../../models/user';
+import User, { IUser, fetchProxyAccount } from '../../../../models/user';
 import DriveFile, { IDriveFile } from '../../../../models/drive-file';
 import create from '../../../../services/note/create';
 import define from '../../define';
@@ -239,6 +239,10 @@ export default define(meta, (ps, user, app) => new Promise(async (res, rej) => {
 		visibleUsers,
 		geo: ps.geo
 	})
+	.then(note => {
+		relay(note);	// no await
+		return note;
+	})
 	.then(note => pack(note, user))
 	.then(noteObj => {
 		res({
@@ -249,3 +253,16 @@ export default define(meta, (ps, user, app) => new Promise(async (res, rej) => {
 		rej(e);
 	});
 }));
+
+async function relay(note: INote) {
+	if (note.visibility != 'public' && note.visibility != 'home') return;
+	if (note.renoteId && !note.text && !note.fileIds) return;
+
+	const relay = await fetchProxyAccount();
+	if (relay == null) return;
+
+	await create(relay, {
+		createdAt: new Date(),
+		renote: note
+	}).catch(e => console.warn(e));
+}
