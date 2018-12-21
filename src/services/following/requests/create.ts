@@ -24,10 +24,10 @@ export default async function(follower: IUser, followee: IUser, requestId?: stri
 	if (blocked != null) throw new Error('blocked');
 
 	// actor以外はApplicationをフォローできないようにする
-	if (isRemoteUser(followee) && followee.type === 'Application') {
-		const actor = await fetchActorAccount();
-		if (follower._id !== actor._id) throw new Error('Can not follow Application');
-	}
+	//if (isRemoteUser(followee) && followee.type === 'Application') {
+	//	const actor = await fetchActorAccount();
+	//	if (follower._id !== actor._id) throw new Error('Can not follow Application');
+	//}
 
 	await FollowRequest.insert({
 		createdAt: new Date(),
