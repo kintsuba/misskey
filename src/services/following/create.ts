@@ -1,4 +1,4 @@
-import User, { isLocalUser, isRemoteUser, pack as packUser, IUser } from '../../models/user';
+import User, { isLocalUser, isRemoteUser, pack as packUser, IUser, fetchActorAccount } from '../../models/user';
 import Following from '../../models/following';
 import Blocking from '../../models/blocking';
 import { publishMainStream } from '../../stream';
@@ -38,6 +38,12 @@ export default async function(follower: IUser, followee: IUser, requestId?: stri
 		// それ以外は単純に例外
 		if (blocking != null) throw new Error('blocking');
 		if (blocked != null) throw new Error('blocked');
+	}
+
+	// actor以外はApplicationをフォローできないようにする
+	if (isRemoteUser(followee) && followee.type === 'Application') {
+		const actor = await fetchActorAccount();
+		if (followee._id === actor._id) throw new Error('Can not follow Application');
 	}
 
 	// フォロー対象が鍵アカウントである or
