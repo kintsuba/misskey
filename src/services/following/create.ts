@@ -43,7 +43,7 @@ export default async function(follower: IUser, followee: IUser, requestId?: stri
 	// actor以外はApplicationをフォローできないようにする
 	if (isRemoteUser(followee) && followee.type === 'Application') {
 		const actor = await fetchActorAccount();
-		if (followee._id === actor._id) throw new Error('Can not follow Application');
+		if (follower._id !== actor._id) throw new Error('Can not follow Application');
 	}
 
 	// フォロー対象が鍵アカウントである or
