@@ -1,6 +1,6 @@
 import es from '../../db/elasticsearch';
 import Note, { pack, INote } from '../../models/note';
-import User, { isLocalUser, IUser, isRemoteUser, IRemoteUser, ILocalUser, fetchRelayAccount } from '../../models/user';
+import User, { isLocalUser, IUser, isRemoteUser, IRemoteUser, ILocalUser, fetchActorAccount } from '../../models/user';
 import { publishMainStream, publishHomeTimelineStream, publishLocalTimelineStream, publishHybridTimelineStream, publishGlobalTimelineStream, publishUserListStream, publishHashtagStream } from '../../stream';
 import Following from '../../models/following';
 import { deliver } from '../../queue';
@@ -76,9 +76,9 @@ class NotificationManager {
 
 			const mentioneesMutedUserIds = mentioneeMutes.map(m => m.muteeId.toString());
 
-			// relayアカウントからは通知しない
-			const relay = await fetchRelayAccount();
-			if (relay) mentioneesMutedUserIds.push(relay._id.toHexString());
+			// actorアカウントからは通知しない
+			const actor = await fetchActorAccount();
+			if (actor) mentioneesMutedUserIds.push(actor._id.toHexString());
 
 			// 通知される側のユーザーが通知する側のユーザーをミュートしていない限りは通知する
 			if (!mentioneesMutedUserIds.includes(this.notifier._id.toString())) {

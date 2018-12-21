@@ -44,10 +44,10 @@
 			<ui-info warn>{{ $t('proxy-account-warn') }}</ui-info>
 		</section>
 		<section>
-			<header><fa :icon="faGhost"/> {{ $t('relay-account-config') }}</header>
-			<ui-info>{{ $t('relay-account-info') }}</ui-info>
-			<ui-input v-model="relayAccount"><span slot="prefix">@</span>{{ $t('relay-account-username') }}<span slot="desc">{{ $t('relay-account-username-desc') }}</span></ui-input>
-			<ui-info warn>{{ $t('relay-account-warn') }}</ui-info>
+			<header><fa :icon="faGhost"/> {{ $t('actor-account-config') }}</header>
+			<ui-info>{{ $t('actor-account-info') }}</ui-info>
+			<ui-input v-model="actorAccount"><span slot="prefix">@</span>{{ $t('actor-account-username') }}<span slot="desc">{{ $t('actor-account-username-desc') }}</span></ui-input>
+			<ui-info warn>{{ $t('actor-account-warn') }}</ui-info>
 		</section>
 		<section>
 			<header><fa :icon="farEnvelope"/> {{ $t('email-config') }}</header>
@@ -177,7 +177,7 @@ export default Vue.extend({
 			discordClientId: null,
 			discordClientSecret: null,
 			proxyAccount: null,
-			relayAccount: null,
+			actorAccount: null,
 			inviteCode: null,
 			enableExternalUserRecommendation: false,
 			externalUserRecommendationEngine: null,
@@ -216,7 +216,7 @@ export default Vue.extend({
 			this.recaptchaSiteKey = meta.recaptchaSiteKey;
 			this.recaptchaSecretKey = meta.recaptchaSecretKey;
 			this.proxyAccount = meta.proxyAccount;
-			this.relayAccount = meta.relayAccount;
+			this.actorAccount = meta.actorAccount;
 			this.enableTwitterIntegration = meta.enableTwitterIntegration;
 			this.twitterConsumerKey = meta.twitterConsumerKey;
 			this.twitterConsumerSecret = meta.twitterConsumerSecret;
@@ -274,7 +274,7 @@ export default Vue.extend({
 				recaptchaSiteKey: this.recaptchaSiteKey,
 				recaptchaSecretKey: this.recaptchaSecretKey,
 				proxyAccount: this.proxyAccount,
-				relayAccount: this.relayAccount,
+				actorAccount: this.actorAccount,
 				enableTwitterIntegration: this.enableTwitterIntegration,
 				twitterConsumerKey: this.twitterConsumerKey,
 				twitterConsumerSecret: this.twitterConsumerSecret,

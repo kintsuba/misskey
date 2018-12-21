@@ -98,7 +98,7 @@ export default define(meta, (ps, me) => new Promise(async (res, rej) => {
 		response.hidedTags = instance.hidedTags;
 		response.recaptchaSecretKey = instance.recaptchaSecretKey;
 		response.proxyAccount = instance.proxyAccount;
-		response.relayAccount = instance.relayAccount;
+		response.actorAccount = instance.actorAccount;
 		response.twitterConsumerKey = instance.twitterConsumerKey;
 		response.twitterConsumerSecret = instance.twitterConsumerSecret;
 		response.githubClientId = instance.githubClientId;

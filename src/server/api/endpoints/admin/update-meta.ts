@@ -125,10 +125,10 @@ export const meta = {
 			}
 		},
 
-		relayAccount: {
+		actorAccount: {
 			validator: $.str.optional.nullable,
 			desc: {
-				'ja-JP': 'relayアカウントのユーザー名'
+				'ja-JP': 'actorアカウントのユーザー名'
 			}
 		},
 
@@ -379,8 +379,8 @@ export default define(meta, (ps) => new Promise(async (res, rej) => {
 		set.proxyAccount = ps.proxyAccount;
 	}
 
-	if (ps.relayAccount !== undefined) {
-		set.relayAccount = ps.relayAccount;
+	if (ps.actorAccount !== undefined) {
+		set.actorAccount = ps.actorAccount;
 	}
 
 	if (ps.maintainerName !== undefined) {
