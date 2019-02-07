@@ -26,7 +26,7 @@ import { showMachineInfo } from './misc/show-machine-info';
 
 const logger = new Logger('core', 'cyan');
 const bootLogger = logger.createSubLogger('boot', 'magenta');
-const clusterLog = logger.createSubLogger('cluster', 'orange');
+const clusterLogger = logger.createSubLogger('cluster', 'orange');
 const ev = new Xev();
 
 /**
@@ -34,6 +34,11 @@ const ev = new Xev();
  */
 function main() {
 	process.title = `Misskey (${cluster.isMaster ? 'master' : 'worker'})`;
+
+	if (program.onlyQueue) {
+		queueMain();
+		return;
+	}
 
 	if (cluster.isMaster || program.disableClustering) {
 		masterMain();
@@ -53,12 +58,7 @@ function main() {
 	}
 }
 
-/**
- * Init master process
- */
-async function masterMain() {
-	let config: Config;
-
+function greet() {
 	if (!program.quiet) {
 		//#region Misskey logo
 		const v = `v${pkg.version}`;
@@ -75,10 +75,34 @@ async function masterMain() {
 	bootLogger.info('Welcome to Misskey!');
 	bootLogger.info(`Misskey v${pkg.version}`, true);
 	bootLogger.info('Misskey is maintained by @syuilo, @AyaMorisawa, @mei23, and @acid-chicken.');
+}
+
+/**
+ * Init master process
+ */
+async function masterMain() {
+	greet();
+
+	let config: Config;
 
 	try {
 		// initialize app
 		config = await init();
+
+		if (config.port == null) {
+			bootLogger.error('The port is not configured. Please configure port.', true);
+			process.exit(1);
+		}
+
+		if (process.platform === 'linux' && isWellKnownPort(config.port) && !isRoot()) {
+			bootLogger.error('You need root privileges to listen on well-known port on Linux', true);
+			process.exit(1);
+		}
+
+		if (!await isPortAvailable(config.port)) {
+			bootLogger.error(`Port ${config.port} is already in use`, true);
+			process.exit(1);
+		}
 	} catch (e) {
 		bootLogger.error('Fatal error occurred during initialization', true);
 		process.exit(1);
@@ -90,6 +114,9 @@ async function masterMain() {
 		await spawnWorkers(config.clusterLimit);
 	}
 
+	// start queue
+	require('./queue').default();
+
 	bootLogger.succ(`Now listening on port ${config.port} on ${config.url}`, true);
 }
 
@@ -100,12 +127,32 @@ async function workerMain() {
 	// start server
 	await require('./server').default();
 
-	// start processor
-	require('./queue').default();
-
 	if (cluster.isWorker) {
 		// Send a 'ready' message to parent process
 		process.send('ready');
+	}
+}
+
+async function queueMain() {
+	greet();
+
+	try {
+		// initialize app
+		await init();
+	} catch (e) {
+		bootLogger.error('Fatal error occurred during initialization', true);
+		process.exit(1);
+	}
+
+	bootLogger.succ('Misskey initialized');
+
+	// start processor
+	const queue = require('./queue').default();
+
+	if (queue) {
+		bootLogger.succ('Queue started', true);
+	} else {
+		bootLogger.error('Queue not available');
 	}
 }
 
@@ -170,21 +217,6 @@ async function init(): Promise<Config> {
 
 	configLogger.succ('Loaded');
 
-	if (config.port == null) {
-		bootLogger.error('The port is not configured. Please configure port.', true);
-		process.exit(1);
-	}
-
-	if (process.platform === 'linux' && isWellKnownPort(config.port) && !isRoot()) {
-		bootLogger.error('You need root privileges to listen on well-known port on Linux', true);
-		process.exit(1);
-	}
-
-	if (!await isPortAvailable(config.port)) {
-		bootLogger.error(`Port ${config.port} is already in use`, true);
-		process.exit(1);
-	}
-
 	// Try to connect to MongoDB
 	try {
 		await checkMongoDB(config, bootLogger);
@@ -217,19 +249,19 @@ function spawnWorker(): Promise<void> {
 
 // Listen new workers
 cluster.on('fork', worker => {
-	clusterLog.debug(`Process forked: [${worker.id}]`);
+	clusterLogger.debug(`Process forked: [${worker.id}]`);
 });
 
 // Listen online workers
 cluster.on('online', worker => {
-	clusterLog.debug(`Process is now online: [${worker.id}]`);
+	clusterLogger.debug(`Process is now online: [${worker.id}]`);
 });
 
 // Listen for dying workers
 cluster.on('exit', worker => {
 	// Replace the dead worker,
 	// we're not sentimental
-	clusterLog.error(chalk.red(`[${worker.id}] died :(`));
+	clusterLogger.error(chalk.red(`[${worker.id}] died :(`));
 	cluster.fork();
 });
 

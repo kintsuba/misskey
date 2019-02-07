@@ -28,7 +28,8 @@ export default class Logger {
 		} else {
 			const time = dateformat(new Date(), 'HH:MM:ss');
 			const process = cluster.isMaster ? '*' : cluster.worker.id;
-			const log = `${chalk.gray(time)} ${level} ${process}\t[${domains.join(' ')}]\t${message}`;
+			let log = `${level} ${process}\t[${domains.join(' ')}]\t${message}`;
+			if (program.withLogTime) log = chalk.gray(time) + ' ' + log;
 			console.log(important ? chalk.bold(log) : log);
 		}
 	}
@@ -45,7 +46,7 @@ export default class Logger {
 		this.log(important ? chalk.bgGreen.white('DONE') : chalk.green('DONE'), chalk.green(message), important);
 	}
 
-	public debug(message: string, important = false): void { // デバッグ用に使う(開発者にとっては必要だが利用者にとっては不要な情報)
+	public debug(message: string, important = false): void { // デバッグ用に使う(開発者に必要だが利用者に不要な情報)
 		if (process.env.NODE_ENV != 'production' || program.verbose) {
 			this.log(chalk.gray('VERB'), chalk.gray(message), important);
 		}

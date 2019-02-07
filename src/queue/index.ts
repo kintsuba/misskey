@@ -1,16 +1,19 @@
 import * as Queue from 'bee-queue';
-import config from '../config';
+import * as httpSignature from 'http-signature';
 
+import config from '../config';
 import { ILocalUser } from '../models/user';
 import { program } from '../argv';
 import handler from './processors';
+import { queueLogger } from './logger';
 
-const enableQueue = config.redis != null && !program.disableQueue;
+const enableQueue = !program.disableQueue;
+const queueAvailable = config.redis != null;
 
 const queue = initializeQueue();
 
 function initializeQueue() {
-	if (enableQueue) {
+	if (queueAvailable) {
 		return new Queue('misskey', {
 			redis: {
 				port: config.redis.port,
@@ -29,30 +32,45 @@ function initializeQueue() {
 	}
 }
 
-export function createHttpJob(data: any) {
-	if (enableQueue) {
+export function deliver(user: ILocalUser, content: any, to: any) {
+	if (content == null) return;
+
+	const data = {
+		type: 'deliver',
+		user,
+		content,
+		to
+	};
+
+	if (queueAvailable && !program.disableApQueue) {
 		return queue.createJob(data)
-			.retries(4)
-			.backoff('exponential', 16384) // 16s
+			.retries(8)
+			.backoff('exponential', 1000)
 			.save();
 	} else {
 		return handler({ data }, () => {});
 	}
 }
 
-export function deliver(user: ILocalUser, content: any, to: any) {
-	if (content == null) return;
+export function processInbox(activity: any, signature: httpSignature.IParsedSignature) {
+	const data = {
+		type: 'processInbox',
+		activity: activity,
+		signature
+	};
 
-	createHttpJob({
-		type: 'deliver',
-		user,
-		content,
-		to
-	});
+	if (queueAvailable && !program.disableApQueue) {
+		return queue.createJob(data)
+			.retries(3)
+			.backoff('exponential', 500)
+			.save();
+	} else {
+		return handler({ data }, () => {});
+	}
 }
 
 export function createExportNotesJob(user: ILocalUser) {
-	if (!enableQueue) throw 'queue disabled';
+	if (!queueAvailable) throw 'queue unavailable';
 
 	return queue.createJob({
 		type: 'exportNotes',
@@ -61,8 +79,47 @@ export function createExportNotesJob(user: ILocalUser) {
 		.save();
 }
 
+export function createExportFollowingJob(user: ILocalUser) {
+	if (!queueAvailable) throw 'queue unavailable';
+
+	return queue.createJob({
+		type: 'exportFollowing',
+		user: user
+	})
+		.save();
+}
+
+export function createExportMuteJob(user: ILocalUser) {
+	if (!queueAvailable) throw 'queue unavailable';
+
+	return queue.createJob({
+		type: 'exportMute',
+		user: user
+	})
+		.save();
+}
+
+export function createExportBlockingJob(user: ILocalUser) {
+	if (!queueAvailable) throw 'queue unavailable';
+
+	return queue.createJob({
+		type: 'exportBlocking',
+		user: user
+	})
+		.save();
+}
+
 export default function() {
-	if (enableQueue) {
+	if (queueAvailable && enableQueue) {
 		queue.process(128, handler);
+		queueLogger.succ('Processing started');
 	}
+
+	return queue;
+}
+
+export function destroy() {
+	queue.destroy().then(n => {
+		queueLogger.succ(`All job removed (${n} jobs)`);
+	});
 }

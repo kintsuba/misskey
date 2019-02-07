@@ -144,7 +144,11 @@ router.get('/@:user', async (ctx, next) => {
 	});
 
 	if (user != null) {
-		await ctx.render('user', { user });
+		const meta = await fetchMeta();
+		await ctx.render('user', {
+			user,
+			instanceName: meta.name
+		});
 		ctx.set('Cache-Control', 'public, max-age=180');
 	} else {
 		// リモートユーザーなので
@@ -180,9 +184,11 @@ router.get('/notes/:note', async ctx => {
 
 		if (note) {
 			const _note = await packNote(note);
+			const meta = await fetchMeta();
 			await ctx.render('note', {
 				note: _note,
-				summary: getNoteSummary(_note)
+				summary: getNoteSummary(_note),
+				instanceName: meta.name
 			});
 
 			if (['public', 'home'].includes(note.visibility)) {
