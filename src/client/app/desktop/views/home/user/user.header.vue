@@ -9,12 +9,19 @@
 			</p>
 			<div>
 				<span class="username"><mk-acct :user="user" :detail="true" /></span>
-				<span v-if="user.isBot" :title="$t('title')"><fa icon="robot"/></span>
+				<span v-if="user.isBot" :title="$t('is-bot')"><fa icon="robot"/></span>
 			</div>
 		</div>
 	</div>
 	<mk-avatar class="avatar" :user="user" :disable-preview="true"/>
 	<div class="body">
+		<div class="actions" v-if="$store.getters.isSignedIn">
+			<template v-if="$store.state.i.id != user.id">
+				<span class="followed" v-if="user.isFollowed">{{ $t('follows-you') }}</span>
+				<mk-follow-button :user="user" :inline="true" class="follow"/>
+			</template>
+			<ui-button @click="menu" ref="menu" :inline="true"><fa icon="ellipsis-h"/></ui-button>
+		</div>
 		<div class="description">
 			<mfm v-if="user.description" :text="user.description" :author="user" :i="$store.state.i" :custom-emojis="user.emojis"/>
 		</div>
@@ -45,6 +52,7 @@
 import Vue from 'vue';
 import i18n from '../../../../i18n';
 import * as age from 's-age';
+import XUserMenu from '../../../../common/views/components/user-menu.vue';
 
 export default Vue.extend({
 	i18n: i18n('desktop/views/pages/user/user.header.vue'),
@@ -98,6 +106,13 @@ export default Vue.extend({
 
 			this.$updateBanner().then(i => {
 				this.user.bannerUrl = i.bannerUrl;
+			});
+		},
+
+		menu() {
+			this.$root.new(XUserMenu, {
+				source: this.$refs.menu.$el,
+				user: this.user
 			});
 		}
 	}
@@ -186,6 +201,17 @@ export default Vue.extend({
 	> .body
 		padding 16px 16px 16px 154px
 		color var(--text)
+
+		> .actions
+			text-align right
+			padding-bottom 16px
+			border-bottom solid 1px var(--faceDivider)
+
+			> *
+				margin-left 8px
+
+			> .follow
+				width 180px
 
 		> .fields
 			margin-top 16px
