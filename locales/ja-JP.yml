@@ -60,6 +60,11 @@ common:
   trash: "ゴミ箱"
   drive: "ドライブ"
   messaging: "トーク"
+  deck: "デッキ"
+  timeline: "タイムライン"
+  explore: "みつける"
+  following: "フォロー中"
+  followers: "フォロワー"
 
   weekday-short:
     sunday: "日"
@@ -1083,8 +1088,6 @@ desktop/views/components/ui.header.account.vue:
   dark: "闇に飲まれる"
 
 desktop/views/components/ui.header.nav.vue:
-  home: "ホーム"
-  deck: "デッキ"
   game: "ゲーム"
 
 desktop/views/components/ui.header.notifications.vue:
@@ -1655,10 +1658,6 @@ mobile/views/components/user-timeline.vue:
   no-notes: "このユーザーは投稿していないようです。"
   no-notes-with-media: "メディア付き投稿はありません。"
 
-mobile/views/components/users-list.vue:
-  all: "すべて"
-  known: "知り合い"
-
 mobile/views/pages/favorites.vue:
   title: "お気に入り"
 
@@ -1824,6 +1823,9 @@ deck:
   rename: "名前を変更"
   stack-left: "左に重ねる"
   pop-right: "右に出す"
+  disabled-timeline:
+    title: "無効化されたタイムライン"
+    description: "サーバーの運営者により、このタイムラインは使用できない状態に設定されています。"
 
 deck/deck.tl-column.vue:
   is-media-only: "メディア投稿のみ"
