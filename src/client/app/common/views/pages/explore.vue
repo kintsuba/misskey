@@ -1,11 +1,20 @@
 <template>
 <div>
-	<ui-container :show-header="false">
+	<ui-container :show-header="false" v-if="meta && stats">
 		<div class="kpdsmpnk" :style="{ backgroundImage: meta.bannerUrl ? `url(${meta.bannerUrl})` : null }">
 			<div>
-				<b>{{ $t('explore', { host: meta.name }) }}</b>
+				<router-link to="/explore" class="title">{{ $t('explore', { host: meta.name }) }}</router-link>
 				<span>{{ $t('users-info', { users: num(stats.originalUsersCount) }) }}</span>
 			</div>
+		</div>
+	</ui-container>
+
+	<ui-container :body-togglable="true" :expanded="tag == null" ref="tags">
+		<template #header><fa :icon="faHashtag" fixed-width/>{{ $t('popular-tags') }}</template>
+
+		<div class="vxjfqztj">
+			<router-link v-for="tag in tagsLocal" :to="`/explore/tags/${tag.tag}`" :key="tag.tag" class="local">{{ tag.tag }}</router-link>
+			<router-link v-for="tag in tagsRemote" :to="`/explore/tags/${tag.tag}`" :key="tag.tag">{{ tag.tag }}</router-link>
 		</div>
 	</ui-container>
 
@@ -15,15 +24,6 @@
 	<mk-user-list v-if="tag != null" :make-promise="tagRemoteUsers" :key="`${tag}-remote`">
 		<fa :icon="faHashtag" fixed-width/>{{ tag }} ({{ $t('federated') }})
 	</mk-user-list>
-
-	<ui-container :body-togglable="true">
-		<template #header><fa :icon="faHashtag" fixed-width/>{{ $t('popular-tags') }}</template>
-
-		<div class="vxjfqztj">
-			<router-link v-for="tag in tagsLocal" :to="`/explore/tags/${tag.tag}`" :key="tag.tag" class="local">{{ tag.tag }}</router-link>
-			<router-link v-for="tag in tagsRemote" :to="`/explore/tags/${tag.tag}`" :key="tag.tag">{{ tag.tag }}</router-link>
-		</div>
-	</ui-container>
 
 	<template v-if="tag == null">
 		<mk-user-list :make-promise="verifiedUsers">
@@ -114,6 +114,12 @@ export default Vue.extend({
 		},
 	},
 
+	watch: {
+		tag() {
+			if (this.$refs.tags) this.$refs.tags.toggleContent(this.tag == null);
+		}
+	},
+
 	created() {
 		this.$root.api('hashtags/list', {
 			sort: '+attachedLocalUsers',
@@ -169,10 +175,11 @@ export default Vue.extend({
 		color #fff
 		text-shadow 0 0 8px #00
 
-		> b
+		> .title
 			display block
 			font-size 20px
 			font-weight bold
+			color inherit
 
 		> span
 			font-size 14px

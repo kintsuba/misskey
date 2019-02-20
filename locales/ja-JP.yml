@@ -1234,6 +1234,7 @@ admin/views/instance.vue:
   smtp-secure-info: "STARTTLS使用時はオフにします。"
   smtp-host: "SMTPホスト"
   smtp-port: "SMTPポート"
+  smtp-auth: "SMTP認証を行う"
   smtp-user: "SMTPユーザー"
   smtp-pass: "SMTPパスワード"
   serviceworker-config: "ServiceWorker"
@@ -1505,6 +1506,7 @@ desktop/views/pages/user/user.header.vue:
   following: "フォロー"
   followers: "フォロワー"
   is-bot: "このアカウントはBotです"
+  no-description: "自己紹介はありません"
   years-old: "{age}歳"
   year: "年"
   month: "月"
@@ -1793,12 +1795,6 @@ mobile/views/pages/user/home.vue:
   frequently-replied-users: "よく話すユーザー"
   followers-you-know: "知り合いのフォロワー"
   last-used-at: "最終ログイン"
-
-mobile/views/pages/user/home.followers-you-know.vue:
-  no-users: "知り合いのユーザーはいません"
-
-mobile/views/pages/user/home.friends.vue:
-  no-users: "よく話すユーザーはいません"
 
 mobile/views/pages/user/home.notes.vue:
   no-notes: "投稿はありません"
