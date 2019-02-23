@@ -2,10 +2,13 @@ import $ from 'cafy';
 import User, { pack } from '../../../models/user';
 import define from '../define';
 import { fallback } from '../../../prelude/symbol';
+import { getHideUserIds } from '../common/get-hide-users';
 
 const nonnull = { $ne: null as any };
 
 export const meta = {
+	tags: ['users'],
+
 	requireCredential: false,
 
 	params: {
@@ -54,25 +57,25 @@ export const meta = {
 };
 
 const state: any = { // < https://github.com/Microsoft/TypeScript/issues/1863
-  'admin': { isAdmin: true },
-  'moderator': { isModerator: true },
-  'adminOrModerator': {
-    $or: [
-      { isAdmin: true },
-      { isModerator: true }
-    ]
-  },
-  'verified': { isVerified: true },
-  'alive': {
-    updatedAt: { $gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5) }
-  },
-  [fallback]: {}
+	'admin': { isAdmin: true },
+	'moderator': { isModerator: true },
+	'adminOrModerator': {
+		$or: [
+			{ isAdmin: true },
+			{ isModerator: true }
+		]
+	},
+	'verified': { isVerified: true },
+	'alive': {
+		updatedAt: { $gt: new Date(Date.now() - 1000 * 60 * 60 * 24 * 5) }
+	},
+	[fallback]: {}
 };
 
 const origin: any = { // < https://github.com/Microsoft/TypeScript/issues/1863
-  'local': { host: null },
-  'remote': { host: nonnull },
-  [fallback]: {}
+	'local': { host: null },
+	'remote': { host: nonnull },
+	[fallback]: {}
 };
 
 const sort: any = { // < https://github.com/Microsoft/TypeScript/issues/1863
@@ -85,18 +88,21 @@ const sort: any = { // < https://github.com/Microsoft/TypeScript/issues/1863
 	[fallback]: { _id: -1 }
 };
 
-export default define(meta, (ps, me) => new Promise(async (res, rej) => {
+export default define(meta, async (ps, me) => {
+	const hideUserIds = await getHideUserIds(me);
+
 	const users = await User
 		.find({
-      $and: [
-        state[ps.state] || state[fallback],
-        origin[ps.origin] || origin[fallback]
-      ]
-    }, {
+			$and: [
+				state[ps.state] || state[fallback],
+				origin[ps.origin] || origin[fallback]
+			],
+			...(hideUserIds && hideUserIds.length > 0 ? { _id: { $nin: hideUserIds } } : {})
+		}, {
 			limit: ps.limit,
 			sort: sort[ps.sort] || sort[fallback],
 			skip: ps.offset
 		});
 
-	res(await Promise.all(users.map(user => pack(user, me, { detail: true }))));
-}));
+	return await Promise.all(users.map(user => pack(user, me, { detail: true })));
+});

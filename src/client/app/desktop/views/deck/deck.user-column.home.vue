@@ -61,7 +61,26 @@ export default Vue.extend({
 		return {
 			withFiles: false,
 			images: [],
-			makePromise: cursor => this.$root.api('users/notes', {
+			makePromise: null,
+			chart: null as ApexCharts
+		};
+	},
+
+	watch: {
+		user() {
+			this.fetch();
+			this.genPromiseMaker();
+		}
+	},
+
+	created() {
+		this.fetch();
+		this.genPromiseMaker();
+	},
+
+	methods: {
+		genPromiseMaker() {
+			this.makePromise = cursor => this.$root.api('users/notes', {
 				userId: this.user.id,
 				limit: fetchLimit + 1,
 				untilId: cursor ? cursor : undefined,
@@ -82,15 +101,9 @@ export default Vue.extend({
 						cursor: null
 					};
 				}
-			})
-		};
-	},
+			});
+		},
 
-	created() {
-		this.fetch();
-	},
-
-	methods: {
 		fetch() {
 			const image = [
 				'image/jpeg',
@@ -144,7 +157,9 @@ export default Vue.extend({
 					]);
 				}
 
-				const chart = new ApexCharts(this.$refs.chart, {
+				if (this.chart) this.chart.destroy();
+
+				this.chart = new ApexCharts(this.$refs.chart, {
 					chart: {
 						type: 'bar',
 						stacked: true,
@@ -190,7 +205,7 @@ export default Vue.extend({
 					}
 				});
 
-				chart.render();
+				this.chart.render();
 			});
 		},
 	}
