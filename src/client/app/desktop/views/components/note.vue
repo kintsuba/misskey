@@ -7,9 +7,7 @@
 	v-hotkey="keymap"
 	:title="title"
 >
-	<div class="conversation" v-if="detail && conversation.length > 0">
-		<x-sub v-for="note in conversation" :key="note.id" :note="note"/>
-	</div>
+	<x-sub v-for="note in conversation" :key="note.id" :note="note"/>
 	<div class="reply-to" v-if="appearNote.reply && (!$store.getters.isSignedIn || $store.state.settings.showReplyTarget)">
 		<x-sub :note="appearNote.reply"/>
 	</div>
@@ -69,9 +67,7 @@
 			<div class="deleted" v-if="appearNote.deletedAt != null">{{ $t('deleted') }}</div>
 		</div>
 	</article>
-	<div class="replies" v-if="detail && replies.length > 0">
-		<x-sub v-for="note in replies" :key="note.id" :note="note"/>
-	</div>
+	<x-sub v-for="note in replies" :key="note.id" :note="note"/>
 </div>
 </template>
 
@@ -238,6 +234,7 @@ export default Vue.extend({
 						padding 0
 						overflow-wrap break-word
 						color var(--noteText)
+						font-size calc(1em + var(--fontSize))
 
 						> .reply
 							margin-right 8px
