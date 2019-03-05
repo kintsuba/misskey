@@ -600,15 +600,20 @@ async function publishToFollowers(note: INote, user: IUser, noteActivity: any) {
 		deliver(user as any, noteActivity, inbox);
 	}
 
+	// 後方互換製のため、Questionは時間差でNoteでも送る
+	// Questionに対応してないインスタンスは、2つめのNoteだけを採用する
+	// Questionに対応しているインスタンスは、同IDで採番されている2つめのNoteを無視する
 	setTimeout(() => {
 		if (noteActivity.object.type === 'Question') {
 			const asNote = deepcopy(noteActivity);
+
 			asNote.object.type = 'Note';
+
 			for (const inbox of queue) {
 				deliver(user as any, asNote, inbox);
 			}
 		}
-	}, 3 * 1000);
+	}, 10 * 1000);
 }
 
 function deliverNoteToMentionedRemoteUsers(mentionedUsers: IUser[], user: ILocalUser, noteActivity: any) {
