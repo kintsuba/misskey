@@ -12,9 +12,37 @@
 		</li>
 	</ul>
 	<button class="add" v-if="choices.length < 10" @click="add">{{ $t('add') }}</button>
+	<button class="add" v-else disabled>{{ $t('no-more') }}</button>
 	<button class="destroy" @click="destroy" :title="$t('destroy')">
 		<fa icon="times"/>
 	</button>
+	<section>
+		<div>
+			<ui-switch v-model="multiple">{{ $t('multiple') }}</ui-switch>
+		</div>
+		<div>
+			<ui-select v-model="expiration">
+				<template #label>{{ $t('expiration') }}</template>
+				<option value="infinite">{{ $t('infinite') }}</option>
+				<option value="at">{{ $t('at') }}</option>
+				<option value="after">{{ $t('after') }}</option>
+			</ui-select>
+			<section v-if="expiration === 'at'">
+				<ui-input v-model="atDate" type="date">{{ $t('deadline-date') }}</ui-input>
+				<ui-input v-model="atTime" type="time">{{ $t('deadline-time') }}</ui-input>
+			</section>
+			<section v-if="expiration === 'after'">
+				<ui-input v-model="after" type="number" min="0">{{ $t('interval') }}</ui-input>
+				<ui-select v-model="unit">
+					<template #label>{{ $t('unit') }}</template>
+					<option value="second">{{ $t('second') }}</option>
+					<option value="minute">{{ $t('minute') }}</option>
+					<option value="hour">{{ $t('hour') }}</option>
+					<option value="day">{{ $t('day') }}</option>
+				</ui-select>
+			</section>
+		</div>
+	</section>
 </div>
 </template>
 
@@ -26,8 +54,17 @@ export default Vue.extend({
 	i18n: i18n('common/views/components/poll-editor.vue'),
 	data() {
 		return {
-			choices: ['', '']
+			choices: ['', ''],
+			multiple: false,
+			expiration: 'infinite',
+			atDate: new Date(Date.now() + 86400),
+			atTime: new Date(Date.now() + 86400),
+			after: 0,
+			unit: 'second'
 		};
+	},
+	computed: {
+		
 	},
 	watch: {
 		choices() {
@@ -55,8 +92,29 @@ export default Vue.extend({
 		},
 
 		get() {
+			const at = () => {
+				const date = new Date(this.atDate);
+				const time = new Date(this.atTime);
+				return new Date(`${date.getUTCFullYear()}-${date.getUTCMonth() + 1}-${date.getUTCDate()}T${time.getUTCHours()}:${time.getUTCMinutes()}:${time.getUTCSeconds()}Z`);
+			};
+
+			const after = () => {
+				let base = parseInt(this.after);
+				switch (this.unit) {
+					case 'day': base *= 24;
+					case 'hour': base *= 60;
+					case 'minute': base *= 60;
+					case 'second': return base *= 1000;
+					default: return null;
+				}
+			};
+
 			return {
-				choices: erase('', this.choices)
+				choices: erase('', this.choices),
+				multiple: this.multiple,
+				...(
+					this.expiration === 'at' ? { expiresAt: at() } :
+					this.expiration === 'after' ? { expiredAfter: after() } : {})
 			}
 		},
 
@@ -64,6 +122,16 @@ export default Vue.extend({
 			if (data.choices.length == 0) return;
 			this.choices = data.choices;
 			if (data.choices.length == 1) this.choices = this.choices.concat('');
+			this.multiple = data.multiple;
+			if (data.expiresAt) {
+				this.expiration = 'at';
+				this.atDate = this.atTime = data.expiresAt;
+			} else if (typeof data.expiredAfter === 'number') {
+				this.expiration = 'after';
+				this.after = data.expiredAfter;
+			} else {
+				this.expiration = 'infinite';
+			}
 		}
 	}
 });
@@ -128,6 +196,7 @@ export default Vue.extend({
 		margin 8px 0 0 0
 		vertical-align top
 		color var(--primary)
+		z-index 1
 
 	> .destroy
 		position absolute
@@ -142,4 +211,25 @@ export default Vue.extend({
 		&:active
 			color var(--primaryDarken30)
 
+	> section
+		align-items center
+		display flex
+		margin -16px 0
+
+		> div
+			margin 0 8px
+
+			&:last-child
+				flex 1 0 auto
+				
+				> section
+					align-items center
+					display flex
+					margin -32px 0 0
+
+					> :first-child
+						margin-right 16px
+
+					> .ui-input
+						flex 1 0 auto
 </style>

@@ -25,6 +25,7 @@ import notesChart from '../../services/chart/notes';
 import perUserNotesChart from '../../services/chart/per-user-notes';
 import activeUsersChart from '../../services/chart/active-users';
 import instanceChart from '../../services/chart/instance';
+import * as deepcopy from 'deepcopy';
 
 import { erase, concat } from '../../prelude/array';
 import insertNoteUnread from './unread';
@@ -107,6 +108,7 @@ type Option = {
 	questionUri?: string;
 	uri?: string;
 	app?: IApp;
+	voting?: boolean;
 };
 
 export default async (user: IUser, data: Option, silent = false) => new Promise<INote>(async (res, rej) => {
@@ -453,6 +455,7 @@ async function insertNote(user: IUser, data: Option, tags: string[], emojis: str
 				? data.visibleUsers.map(u => u._id)
 				: []
 			: [],
+		voting: data.voting || false,
 
 		// 以下非正規化データ
 		_reply: data.reply ? {
@@ -596,6 +599,22 @@ async function publishToFollowers(note: INote, user: IUser, noteActivity: any) {
 	for (const inbox of queue) {
 		deliver(user as any, noteActivity, inbox);
 	}
+
+	// 後方互換製のため、Questionは時間差でNoteでも送る
+	// Questionに対応してないインスタンスは、2つめのNoteだけを採用する
+	// Questionに対応しているインスタンスは、同IDで採番されている2つめのNoteを無視する
+	setTimeout(() => {
+		if (noteActivity.object.type === 'Question') {
+			const asNote = deepcopy(noteActivity);
+
+			asNote.object.type = 'Note';
+			asNote.object.content = asNote.object._misskey_fallback_content;
+
+			for (const inbox of queue) {
+				deliver(user as any, asNote, inbox);
+			}
+		}
+	}, 10 * 1000);
 }
 
 function deliverNoteToMentionedRemoteUsers(mentionedUsers: IUser[], user: ILocalUser, noteActivity: any) {

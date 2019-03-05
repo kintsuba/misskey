@@ -16,6 +16,7 @@
 		"curly": false,
 		"no-console": [false],
 		"no-empty": false,
+		"no-bitwise": false,
 		"ordered-imports": [false],
 		"arrow-parens": false,
 		"array-type": [true, "array"],
@@ -24,12 +25,14 @@
 		"triple-equals": [false],
 		"no-shadowed-variable": false,
 		"no-string-literal": false,
+		"no-conditional-assignment": false,
 		"variable-name": [false],
 		"comment-format": [false],
 		"interface-over-type-literal": false,
 		"max-line-length": [false],
 		"max-classes-per-file": false,
 		"member-ordering": [false],
+		"radix": false,
 		"ban-types": [
 			true,
 			"Object"
