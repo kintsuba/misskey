@@ -1,5 +1,5 @@
 <template>
-<a :href="image.url">
+<a :href="image.url" @click.prevent="onClick">
 	<div class="col" :style="style">
 		<img :src="thumbnail" :title="image.name">
 		<div class="badge" v-if="image.type === 'image/gif'">GIF</div>
