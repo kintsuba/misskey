@@ -3,8 +3,13 @@
 	<template v-for="media in mediaList.filter(media => !previewable(media))">
 		<x-banner :media="media" :key="media.id"/>
 	</template>
-	<div v-if="mediaList.filter(media => previewable(media)).length > 0" class="gird-container">
-		<div :data-count="mediaList.filter(media => previewable(media)).length" ref="grid">
+	<div v-if="mediaList.filter(media => previewable(media)).length > 0" class="container">
+		<button v-if="hasNsfw" @click="maskNsfw = !maskNsfw">
+			<b>
+				<fa icon="exclamation-triangle"/> {{ maskNsfw ? $t('show-nsfw') : $t('hide-nsfw') }}
+			</b>
+		</button>
+		<div v-if="!hasNsfw || !maskNsfw" :data-count="mediaList.filter(media => previewable(media)).length" class="list" :class="{ masked }">
 			<template v-for="media in mediaList">
 				<mk-media-video :video="media" :key="media.id" v-if="media.type.startsWith('video')"/>
 				<x-image :image="media" :key="media.id" v-else-if="media.type.startsWith('image')" :raw="raw"/>
@@ -16,10 +21,12 @@
 
 <script lang="ts">
 import Vue from 'vue';
+import i18n from '../../../i18n';
 import XBanner from './media-banner.vue';
 import XImage from './media-image.vue';
 
 export default Vue.extend({
+	i18n: i18n('common/views/components/media-list.vue'),
 	components: {
 		XBanner,
 		XImage
@@ -32,12 +39,21 @@ export default Vue.extend({
 			default: false
 		}
 	},
+	data() {
+		return {
+			maskNsfw: true,
+		};
+	},
 	mounted() {
-		//#region for Safari bug
-		if (this.$refs.grid) {
-			this.$refs.grid.style.height = this.$refs.grid.clientHeight ? `${this.$refs.grid.clientHeight}px` : '128px';
-		}
-		//#endregion
+		this.maskNsfw = !this.$store.state.device.alwaysShowNsfw;
+	},
+	computed: {
+		masked(): Boolean {
+			return this.hasNsfw && this.maskNsfw;
+		},
+		hasNsfw(): Boolean {
+			return this.mediaList && this.mediaList.filter((media: any) => media.isSensitive).length > 0
+		},
 	},
 	methods: {
 		previewable(file) {
@@ -49,64 +65,24 @@ export default Vue.extend({
 
 <style lang="stylus" scoped>
 .mk-media-list
-	> .gird-container
-		width 100%
-		margin-top 4px
+	> .container
+		overflow hidden
 
-		&:before
-			content ''
-			display block
-			padding-top 56.25% // 16:9
+		button
+			display inline-block
+			padding 4px 8px
+			font-size 0.7em
+			color var(--cwButtonFg)
+			background var(--cwButtonBg)
+			border-radius 2px
+			cursor pointer
+			user-select none
 
-		> div
-			position absolute
-			top 0
-			right 0
-			bottom 0
-			left 0
-			display grid
-			grid-gap 4px
+			&:hover
+				background var(--cwButtonHoverBg)
 
-			> *
-				overflow hidden
-				border-radius 4px
-
-			&[data-count="1"]
-				grid-template-rows 1fr
-
-			&[data-count="2"]
-				grid-template-columns 1fr 1fr
-				grid-template-rows 1fr
-
-			&[data-count="3"]
-				grid-template-columns 1fr 0.5fr
-				grid-template-rows 1fr 1fr
-
-				> *:nth-child(1)
-					grid-row 1 / 3
-
-				> *:nth-child(3)
-					grid-column 2 / 3
-					grid-row 2 / 3
-
-			&[data-count="4"]
-				grid-template-columns 1fr 1fr
-				grid-template-rows 1fr 1fr
-
-			> *:nth-child(1)
-				grid-column 1 / 2
-				grid-row 1 / 2
-
-			> *:nth-child(2)
-				grid-column 2 / 3
-				grid-row 1 / 2
-
-			> *:nth-child(3)
-				grid-column 1 / 2
-				grid-row 2 / 3
-
-			> *:nth-child(4)
-				grid-column 2 / 3
-				grid-row 2 / 3
-
+		> .list
+			display flex
+			flex-direction row
+			flex-wrap wrap
 </style>

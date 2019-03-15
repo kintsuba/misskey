@@ -1,20 +1,10 @@
 <template>
-<div class="uofhebxjdgksfmltszlxurtjnjjsvioh" v-if="video.isSensitive && hide && !$store.state.device.alwaysShowNsfw" @click="hide = false">
-	<div>
-		<b><fa icon="exclamation-triangle"/> {{ $t('sensitive') }}</b>
-		<span>{{ $t('click-to-show') }}</span>
+<a :href="video.url" @click.prevent="onClick">
+	<div class="col" :style="style">
+		<img :src="thumbnail" :title="video.name">
+		<fa class="icon" :icon="['far', 'play-circle']"/>
 	</div>
-</div>
-<div class="vwxdhznewyashiknzolsoihtlpicqepe" v-else>
-	<a class="thumbnail"
-		:href="video.url"
-		:style="imageStyle"
-		@click.prevent="onClick"
-		:title="video.name"
-	>
-		<fa :icon="['far', 'play-circle']"/>
-	</a>
-</div>
+</a>
 </template>
 
 <script lang="ts">
@@ -39,11 +29,9 @@ export default Vue.extend({
 		};
 	},
 	computed: {
-		imageStyle(): any {
-			return {
-				'background-image': `url(${this.video.thumbnailUrl})`
-			};
-		}
+		thumbnail(): any {
+			return this.video.thumbnailUrl;
+		},
 	},
 	methods: {
 		onClick() {
@@ -63,37 +51,27 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-.vwxdhznewyashiknzolsoihtlpicqepe
-	.video
-		display block
-		width 100%
-		height 100%
-		border-radius 4px
+a
+	display contents
 
-	.thumbnail
+	.col
+		flex-grow 1
 		display flex
 		justify-content center
-		align-items center
-		font-size 3.5em
-		cursor zoom-in
-		overflow hidden
-		background-position center
-		background-size cover
-		width 100%
-		height 100%
+		margin 3px
+		padding 0
+		border-radius 3px
 
-.uofhebxjdgksfmltszlxurtjnjjsvioh
-	display flex
-	justify-content center
-	align-items center
-	background #111
-	color #fff
+		img
+			height: 120px
+			max-width 100%
+			min-width 160px
+			object-fit contain
 
-	> div
-		display table-cell
-		text-align center
-		font-size 12px
-
-		> b
-			display block
+		.icon
+			position absolute
+			top 50%
+			left 50%
+			transform translate(-50%,-50%)
+			font-size 3em
 </style>

@@ -1,17 +1,9 @@
 <template>
-<div class="qjewsnkgzzxlxtzncydssfbgjibiehcy" v-if="image.isSensitive && hide && !$store.state.device.alwaysShowNsfw" @click="hide = false">
-	<div>
-		<b><fa icon="exclamation-triangle"/> {{ $t('sensitive') }}</b>
-		<span>{{ $t('click-to-show') }}</span>
+<a :href="image.url">
+	<div class="col" :style="style">
+		<img :src="thumbnail" :title="image.name">
+		<div class="badge" v-if="image.type === 'image/gif'">GIF</div>
 	</div>
-</div>
-<a class="gqnyydlzavusgskkfvwvjiattxdzsqlf" v-else
-	:href="image.url"
-	:style="style"
-	:title="image.name"
-	@click.prevent="onClick"
->
-	<div v-if="image.type === 'image/gif'">GIF</div>
 </a>
 </template>
 
@@ -36,24 +28,16 @@ export default Vue.extend({
 		return {
 			hide: true
 		};
-	}
+	},
 	computed: {
+		thumbnail(): string {
+			return this.$store.state.device.disableShowingAnimatedImages
+				? getStaticImageUrl(this.image.thumbnailUrl)
+				: this.image.thumbnailUrl;
+		},
 		style(): any {
-			let url = `url(${
-				this.$store.state.device.disableShowingAnimatedImages
-					? getStaticImageUrl(this.image.thumbnailUrl)
-					: this.image.thumbnailUrl
-			})`;
-
-			if (this.$store.state.device.loadRemoteMedia || this.$store.state.device.lightmode) {
-				url = null;
-			} else if (this.raw || this.$store.state.device.loadRawImages) {
-				url = `url(${this.image.url})`;
-			}
-
 			return {
-				'background-color': this.image.properties.avgColor && this.image.properties.avgColor.length == 3 ? `rgb(${this.image.properties.avgColor.join(',')})` : 'transparent',
-				'background-image': url
+				'background-color': this.image.properties.avgColor && this.image.properties.avgColor.length == 3 ? `rgb(${this.image.properties.avgColor.join(',')}, 0.3)` : 'transparent',
 			};
 		}
 	},
@@ -68,43 +52,29 @@ export default Vue.extend({
 </script>
 
 <style lang="stylus" scoped>
-.gqnyydlzavusgskkfvwvjiattxdzsqlf
-	display block
-	cursor zoom-in
-	overflow hidden
-	width 100%
-	height 100%
-	background-position center
-	background-size contain
-	background-repeat no-repeat
+a
+	display contents
 
-	> div
-		background-color var(--text)
-		border-radius 6px
-		color var(--secondary)
-		display inline-block
-		font-size 14px
-		font-weight bold
-		left 12px
-		opacity .5
-		padding 0 6px
-		text-align center
-		top 12px
-		pointer-events none
+	.col
+		flex-grow 1
+		display flex
+		justify-content center
+		margin 3px
+		padding 0
+		border-radius 3px
 
-.qjewsnkgzzxlxtzncydssfbgjibiehcy
-	display flex
-	justify-content center
-	align-items center
-	background #111
-	color #fff
-
-	> div
-		display table-cell
-		text-align center
-		font-size 12px
-
-		> *
-			display block
-
+		img
+			height: 120px
+			max-width 100%
+			object-fit contain
+		
+		.badge
+			position absolute
+			top 0
+			left 0
+			background-color var(--text)
+			border-radius 3px
+			color var(--secondary)
+			opacity 0.5
+			padding 0 3px
 </style>

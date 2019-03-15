@@ -1031,9 +1031,9 @@ desktop/views/components/settings.2fa.vue:
   failed: "設定に失敗しました。トークンに誤りがないかご確認ください。"
   info: "次回サインインからは、同様にパスワードに加えてデバイスに表示されているトークンを入力します。"
 
-common/views/components/media-image.vue:
-  sensitive: "閲覧注意"
-  click-to-show: "クリックして表示"
+common/views/components/media-list.vue:
+  show-nsfw: "閲覧注意メディアの表示"
+  hide-nsfw: "隠す"
 
 common/views/components/api-settings.vue:
   intro: "APIを利用するには、上記のトークンを「i」というキーでパラメータに付加してリクエストします。"
