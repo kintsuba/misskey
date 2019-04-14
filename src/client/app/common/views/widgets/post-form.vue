@@ -77,6 +77,7 @@ export default define({
 			files: [],
 			visibility: 'public',
 			localOnly: false,
+			phantom: false,
 		};
 	},
 
@@ -210,10 +211,18 @@ export default define({
 			if (m) {
 				this.localOnly = true;
 				this.visibility = m[1];
-			} else {
-				this.localOnly = false;
-				this.visibility = v;
+				return;
 			}
+
+			const p = v.match(/^phantom-(.+)/);
+			if (p) {
+				this.phantom = true;
+				this.visibility = m[1];
+				return;
+			}
+
+			this.localOnly = false;
+			this.visibility = v;
 		},
 
 		post() {
@@ -224,6 +233,7 @@ export default define({
 				fileIds: this.files.length > 0 ? this.files.map(f => f.id) : undefined,
 				visibility: this.visibility,
 				localOnly: this.localOnly,
+				phantom: this.phantom,
 			}).then(data => {
 				this.clear();
 			}).catch(err => {

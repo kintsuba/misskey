@@ -122,6 +122,7 @@ export default Vue.extend({
 			visibility: 'public',
 			visibleUsers: [],
 			localOnly: false,
+			phantom: false,
 			autocomplete: null,
 			draghover: false,
 			recentHashtags: JSON.parse(localStorage.getItem('hashtags') || '[]'),
@@ -384,10 +385,18 @@ export default Vue.extend({
 			if (m) {
 				this.localOnly = true;
 				this.visibility = m[1];
-			} else {
-				this.localOnly = false;
-				this.visibility = v;
+				return;
 			}
+
+			const p = v.match(/^phantom-(.+)/);
+			if (p) {
+				this.phantom = true;
+				this.visibility = m[1];
+				return;
+			}
+
+			this.localOnly = false;
+			this.visibility = v;
 		},
 
 		addVisibleUser() {
@@ -430,6 +439,7 @@ export default Vue.extend({
 				visibility: this.visibility,
 				visibleUserIds: this.visibility == 'specified' ? this.visibleUsers.map(u => u.id) : undefined,
 				localOnly: this.localOnly,
+				phantom: this.phantom,
 				geo: null
 			}).then(data => {
 				this.clear();

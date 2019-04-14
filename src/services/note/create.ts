@@ -1,3 +1,4 @@
+import * as mongo from 'mongodb';
 import es from '../../db/elasticsearch';
 import Note, { pack, INote, IChoice } from '../../models/note';
 import User, { isLocalUser, IUser, isRemoteUser, IRemoteUser, ILocalUser } from '../../models/user';
@@ -101,6 +102,7 @@ type Option = {
 	poll?: any;
 	viaMobile?: boolean;
 	localOnly?: boolean;
+	phantom?: boolean;
 	cw?: string;
 	visibility?: string;
 	visibleUsers?: IUser[];
@@ -228,6 +230,29 @@ export default async (user: IUser, data: Option, silent = false) => new Promise<
 		return;
 	}
 
+	// Pack the note (for API)
+	const noteObj = await pack(note);
+
+	// Pack the activity (for AP)
+	const noteActivity = await renderNoteOrRenoteActivity(data, note);
+
+	// publish TL / deliver AP
+	if (tags.length > 0) {
+		publishHashtagStream(noteObj);
+	}
+
+	if (isLocalUser(user)) {
+		deliverNoteToMentionedRemoteUsers(mentionedUsers, user, noteActivity);
+	}
+
+	if (!silent) {
+		publish(user, note, noteObj, data.reply, data.renote, data.visibleUsers, noteActivity);
+	}
+
+	if (data.phantom) {
+		return;
+	}
+
 	// 統計を更新
 	notesChart.update(note, true);
 	perUserNotesChart.update(user, note, true);
@@ -290,27 +315,14 @@ export default async (user: IUser, data: Option, silent = false) => new Promise<
 		saveQuote(data.renote, note);
 	}
 
-	// Pack the note
-	const noteObj = await pack(note);
-
 	if (isFirstNote) {
 		noteObj.isFirstNote = true;
-	}
-
-	if (tags.length > 0) {
-		publishHashtagStream(noteObj);
 	}
 
 	const nm = new NotificationManager(user, note);
 	const nmRelatedPromises = [];
 
 	createMentionedEvents(mentionedUsers, note, nm);
-
-	const noteActivity = await renderNoteOrRenoteActivity(data, note);
-
-	if (isLocalUser(user)) {
-		deliverNoteToMentionedRemoteUsers(mentionedUsers, user, noteActivity);
-	}
 
 	// If has in reply to note
 	if (data.reply) {
@@ -359,10 +371,6 @@ export default async (user: IUser, data: Option, silent = false) => new Promise<
 				renoteCount: (data.renote.renoteCount || 0) + 1,
 			});
 		}
-	}
-
-	if (!silent) {
-		publish(user, note, noteObj, data.reply, data.renote, data.visibleUsers, noteActivity);
 	}
 
 	Promise.all(nmRelatedPromises).then(() => {
@@ -507,6 +515,14 @@ async function insertNote(user: IUser, data: Option, tags: string[], emojis: str
 			username: u.username,
 			host: u.host
 		}));
+	}
+
+	if (data.phantom) {
+		return Object.assign(insert, {
+			_id: new mongo.ObjectID(),
+			poll: undefined,
+			phantom: true
+		}) as INote;
 	}
 
 	// 投稿を作成

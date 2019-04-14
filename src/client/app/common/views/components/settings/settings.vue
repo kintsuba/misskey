@@ -127,6 +127,9 @@
 						<option value="local-public">{{ $t('@.note-visibility.local-public') }}</option>
 						<option value="local-home">{{ $t('@.note-visibility.local-home') }}</option>
 						<option value="local-followers">{{ $t('@.note-visibility.local-followers') }}</option>
+						<option value="phantom-public">{{ $t('@.note-visibility.phantom-public') }}</option>
+						<option value="phantom-home">{{ $t('@.note-visibility.phantom-home') }}</option>
+						<option value="phantom-followers">{{ $t('@.note-visibility.phantom-followers') }}</option>
 					</ui-select>
 				</section>
 			</section>

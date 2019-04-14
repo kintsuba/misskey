@@ -86,6 +86,14 @@ export const meta = {
 			}
 		},
 
+		phantom: {
+			validator: $.optional.bool,
+			default: false,
+			desc: {
+				'ja-JP': '幻影か否か。'
+			}
+		},
+
 		noExtractMentions: {
 			validator: $.optional.bool,
 			default: false,
@@ -318,7 +326,8 @@ export default define(meta, async (ps, user, app) => {
 		cw: ps.cw,
 		app,
 		viaMobile: ps.viaMobile,
-		localOnly: ps.localOnly,
+		localOnly: ps.localOnly || ps.phantom,
+		phantom: ps.phantom,
 		visibility: ps.visibility,
 		visibleUsers,
 		apMentions: ps.noExtractMentions ? [] : undefined,

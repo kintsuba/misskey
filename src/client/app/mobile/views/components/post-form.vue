@@ -109,6 +109,7 @@ export default Vue.extend({
 			visibility: 'public',
 			visibleUsers: [],
 			localOnly: false,
+			phantom: true,
 			useCw: false,
 			cw: null,
 			recentHashtags: JSON.parse(localStorage.getItem('hashtags') || '[]'),
@@ -301,10 +302,18 @@ export default Vue.extend({
 			if (m) {
 				this.localOnly = true;
 				this.visibility = m[1];
-			} else {
-				this.localOnly = false;
-				this.visibility = v;
+				return;
 			}
+
+			const p = v.match(/^phantom-(.+)/);
+			if (p) {
+				this.phantom = true;
+				this.visibility = m[1];
+				return;
+			}
+
+			this.localOnly = false;
+			this.visibility = v;
 		},
 
 		removeVisibleUser(user) {
@@ -332,6 +341,7 @@ export default Vue.extend({
 				visibility: this.visibility,
 				visibleUserIds: this.visibility == 'specified' ? this.visibleUsers.map(u => u.id) : undefined,
 				localOnly: this.localOnly,
+				phantom: this.phantom,
 				viaMobile: viaMobile
 			}).then(data => {
 				this.$emit('posted');
