@@ -55,18 +55,6 @@
 				<span>{{ $t('phantom-public-desc') }}</span>
 			</div>
 		</div>
-		<div @click="choose('phantom-home')" :class="{ active: v == 'phantom-home' }">
-			<div><fa icon="home"/></div>
-			<div>
-				<span>{{ $t('phantom-home') }}</span>
-			</div>
-		</div>
-		<div @click="choose('phantom-followers')" :class="{ active: v == 'phantom-followers' }">
-			<div><fa icon="unlock"/></div>
-			<div>
-				<span>{{ $t('phantom-followers') }}</span>
-			</div>
-		</div>
 	</div>
 </div>
 </template>

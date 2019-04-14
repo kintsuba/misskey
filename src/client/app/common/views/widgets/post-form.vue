@@ -210,18 +210,21 @@ export default define({
 			const m = v.match(/^local-(.+)/);
 			if (m) {
 				this.localOnly = true;
+				this.phantom = false;
 				this.visibility = m[1];
 				return;
 			}
 
 			const p = v.match(/^phantom-(.+)/);
 			if (p) {
+				this.localOnly = true;
 				this.phantom = true;
 				this.visibility = m[1];
 				return;
 			}
 
 			this.localOnly = false;
+			this.phantom = false;
 			this.visibility = v;
 		},
 

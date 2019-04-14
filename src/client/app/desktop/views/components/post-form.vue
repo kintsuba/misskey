@@ -17,6 +17,7 @@
 			<a v-for="tag in recentHashtags.slice(0, 5)" @click="addTag(tag)" :title="$t('click-to-tagging')">#{{ tag }}</a>
 		</div>
 		<div class="local-only" v-if="localOnly == true">{{ $t('local-only-message') }}</div>
+		<div class="local-only" v-if="phantom == true">{{ $t('phantom-message') }}</div>
 		<input v-show="useCw" ref="cw" v-model="cw" :placeholder="$t('annotations')" v-autocomplete="{ model: 'cw' }">
 		<div class="textarea">
 			<textarea :class="{ with: (files.length != 0 || poll) }"
@@ -384,18 +385,21 @@ export default Vue.extend({
 			const m = v.match(/^local-(.+)/);
 			if (m) {
 				this.localOnly = true;
+				this.phantom = false;
 				this.visibility = m[1];
 				return;
 			}
 
 			const p = v.match(/^phantom-(.+)/);
 			if (p) {
+				this.localOnly = true;
 				this.phantom = true;
 				this.visibility = m[1];
 				return;
 			}
 
 			this.localOnly = false;
+			this.phantom = false;
 			this.visibility = v;
 		},
 
