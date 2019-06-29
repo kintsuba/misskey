@@ -5,7 +5,7 @@ import config from '../../../config';
 import Resolver from '../resolver';
 import Note, { INote } from '../../../models/note';
 import post from '../../../services/note/create';
-import { INote as INoteActivityStreamsObject, IObject } from '../type';
+import { IApNote, IObject, getApIds, getOneApId, getApId, isNote } from '../type';
 import { resolvePerson, updatePerson } from './person';
 import { resolveImage } from './image';
 import { IRemoteUser, IUser } from '../../../models/user';
@@ -13,7 +13,7 @@ import { fromHtml } from '../../../mfm/fromHtml';
 import Emoji, { IEmoji } from '../../../models/emoji';
 import { ITag, extractHashtags } from './tag';
 import { toUnicode } from 'punycode';
-import { unique, concat, difference } from '../../../prelude/array';
+import { unique, concat, difference, toArray } from '../../../prelude/array';
 import { extractPollFromQuestion } from './question';
 import vote from '../../../services/note/polls/vote';
 import { apLogger } from '../logger';
@@ -25,26 +25,26 @@ import { getApLock } from '../../../misc/app-lock';
 
 const logger = apLogger;
 
-export function validateNote(object: any, uri: string) {
+function toNote(object: IObject, uri: string): IApNote {
 	const expectHost = extractApHost(uri);
 
 	if (object == null) {
-		return new Error('invalid Note: object is null');
+		throw new Error('invalid Note: object is null');
 	}
 
-	if (!['Note', 'Question', 'Article'].includes(object.type)) {
-		return new Error(`invalid Note: invalied object type ${object.type}`);
+	if (!isNote(object)) {
+		throw new Error(`invalid Note: invalied object type ${object.type}`);
 	}
 
 	if (object.id && extractApHost(object.id) !== expectHost) {
-		return new Error(`invalid Note: id has different host. expected: ${expectHost}, actual: ${extractApHost(object.id)}`);
+		throw new Error(`invalid Note: id has different host. expected: ${expectHost}, actual: ${extractApHost(object.id)}`);
 	}
 
-	if (object.attributedTo && extractApHost(object.attributedTo) !== expectHost) {
-		return new Error(`invalid Note: attributedTo has different host. expected: ${expectHost}, actual: ${extractApHost(object.attributedTo)}`);
+	if (object.attributedTo && extractApHost(getOneApId(object.attributedTo)) !== expectHost) {
+		throw new Error(`invalid Note: attributedTo has different host. expected: ${expectHost}, actual: ${extractApHost(getOneApId(object.attributedTo))}`);
 	}
 
-	return null;
+	return object;
 }
 
 /**
@@ -53,7 +53,7 @@ export function validateNote(object: any, uri: string) {
  * Misskeyに対象のNoteが登録されていればそれを返します。
  */
 export async function fetchNote(value: string | IObject, resolver?: Resolver): Promise<INote> {
-	const uri = typeof value == 'string' ? value : value.id;
+	const uri = getApId(value);
 
 	// URIがこのサーバーを指しているならデータベースからフェッチ
 	if (uri.startsWith(config.url + '/')) {
@@ -75,14 +75,17 @@ export async function fetchNote(value: string | IObject, resolver?: Resolver): P
 /**
  * Noteを作成します。
  */
-export async function createNote(value: any, resolver?: Resolver, silent = false): Promise<INote> {
+export async function createNote(value: string | IObject, resolver?: Resolver, silent = false): Promise<INote> {
 	if (resolver == null) resolver = new Resolver();
 
-	const object: any = await resolver.resolve(value);
+	const object = await resolver.resolve(value);
 
-	const entryUri = value.id || value;
-	const err = validateNote(object, entryUri);
-	if (err) {
+	const entryUri = getApId(value);
+
+	let note: IApNote;
+	try {
+		note = toNote(object, entryUri);
+	} catch (err) {
 		logger.error(`${err.message}`, {
 			resolver: {
 				history: resolver.getHistory()
@@ -93,14 +96,12 @@ export async function createNote(value: any, resolver?: Resolver, silent = false
 		return null;
 	}
 
-	const note: INoteActivityStreamsObject = object;
-
 	logger.debug(`Note fetched: ${JSON.stringify(note, null, 2)}`);
 
 	logger.info(`Creating the Note: ${note.id}`);
 
 	// 投稿者をフェッチ
-	const actor = await resolvePerson(note.attributedTo, null, resolver) as IRemoteUser;
+	const actor = await resolvePerson(getOneApId(note.attributedTo), null, resolver) as IRemoteUser;
 
 	// 投稿者が凍結されていたらスキップ
 	if (actor.isSuspended) {
@@ -108,34 +109,32 @@ export async function createNote(value: any, resolver?: Resolver, silent = false
 	}
 
 	//#region Visibility
-	note.to = note.to == null ? [] : typeof note.to == 'string' ? [note.to] : note.to;
-	note.cc = note.cc == null ? [] : typeof note.cc == 'string' ? [note.cc] : note.cc;
+	const to = getApIds(note.to);
+	const cc = getApIds(note.cc);
 
 	let visibility = 'public';
 	let visibleUsers: IUser[] = [];
-	if (!note.to.includes('https://www.w3.org/ns/activitystreams#Public')) {
-		if (note.cc.includes('https://www.w3.org/ns/activitystreams#Public')) {
+	if (!to.includes('https://www.w3.org/ns/activitystreams#Public')) {
+		if (cc.includes('https://www.w3.org/ns/activitystreams#Public')) {
 			visibility = 'home';
-		} else if (note.to.includes(`${actor.uri}/followers`)) {	// TODO: person.followerと照合するべき？
+		} else if (to.includes(`${actor.uri}/followers`)) {	// TODO: person.followerと照合するべき？
 			visibility = 'followers';
 		} else {
 			visibility = 'specified';
-			visibleUsers = await Promise.all(note.to.map(uri => resolvePerson(uri, null, resolver)));
+			visibleUsers = await Promise.all(to.map(uri => resolvePerson(uri, null, resolver)));
 		}
 }
 	//#endergion
 
-	const apMentions = await extractMentionedUsers(actor, note.to, note.cc, resolver);
+	const apMentions = await extractMentionedUsers(actor, to, cc, resolver);
 
 	const apHashtags = await extractHashtags(note.tag);
 
 	// 添付ファイル
-	// TODO: attachmentは必ずしもImageではない
-	// TODO: attachmentは必ずしも配列ではない
 	// Noteがsensitiveなら添付もsensitiveにする
 	const limit = promiseLimit(2);
 
-	note.attachment = Array.isArray(note.attachment) ? note.attachment : note.attachment ? [note.attachment] : [];
+	note.attachment = toArray(note.attachment);
 	const files = note.attachment
 		.map(attach => attach.sensitive = note.sensitive)
 		? (await Promise.all(note.attachment.map(x => limit(() => resolveImage(actor, x)) as Promise<IDriveFile>)))
@@ -212,11 +211,11 @@ export async function createNote(value: any, resolver?: Resolver, silent = false
 	const apEmojis = emojis.map(emoji => emoji.name);
 
 	const questionUri = note._misskey_question;
-	const poll = await extractPollFromQuestion(note._misskey_question || note).catch(() => undefined);
+	const poll = await extractPollFromQuestion(note._misskey_question || note, resolver).catch(() => undefined);
 
 	// ユーザーの情報が古かったらついでに更新しておく
 	if (actor.lastFetchedAt == null || Date.now() - actor.lastFetchedAt.getTime() > 1000 * 60 * 60 * 24) {
-		updatePerson(note.attributedTo);
+		updatePerson(actor.uri);
 	}
 
 	return await post(actor, {

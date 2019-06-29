@@ -1,13 +1,13 @@
 import Resolver from '../../resolver';
 import { IRemoteUser } from '../../../../models/user';
 import announceNote from './note';
-import { IAnnounce, INote } from '../../type';
+import { IAnnounce, getApId, isNote } from '../../type';
 import { apLogger } from '../../logger';
 
 const logger = apLogger;
 
 export default async (actor: IRemoteUser, activity: IAnnounce): Promise<void> => {
-	const uri = activity.id || activity;
+	const uri = getApId(activity);
 
 	logger.info(`Announce: ${uri}`);
 
@@ -22,15 +22,9 @@ export default async (actor: IRemoteUser, activity: IAnnounce): Promise<void> =>
 		throw e;
 	}
 
-	switch (object.type) {
-	case 'Note':
-	case 'Question':
-	case 'Article':
-		announceNote(resolver, actor, activity, object as INote);
-		break;
-
-	default:
+	if (isNote(object)) {
+		announceNote(resolver, actor, activity, object);
+	} else {
 		logger.warn(`Unknown announce type: ${object.type}`);
-		break;
 	}
 };

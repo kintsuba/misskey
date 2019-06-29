@@ -304,7 +304,7 @@ common:
   you: "あなた"
 
 auth/views/form.vue:
-  share-access: "<i>{name}</i>があなたのアカウントにアクセスすることを許可しますか？"
+  share-access: "以下のアプリがあなたのアカウントにアクセスすることを許可しますか？"
   permission-ask: "このアプリは次の権限を要求しています:"
   account-read: "アカウントの情報を見る。"
   account-write: "アカウントの情報を操作する。"
@@ -1669,6 +1669,7 @@ mobile/views/components/post-form.vue:
   location-alert: "お使いの端末は位置情報に対応していません"
   error: "エラー"
   username-prompt: "ユーザー名を入力してください"
+  quote: "引用する..."
 
 mobile/views/components/sub-note-content.vue:
   private: "この投稿は非公開です"

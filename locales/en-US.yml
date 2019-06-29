@@ -287,7 +287,7 @@ common:
   ai-chan-kawaii: "Ai-chan kawaii!"
   you: "You"
 auth/views/form.vue:
-  share-access: "Would you allow <i>{name}</i> to access your account?"
+  share-access: "Would you allow the following app to access your account?"
   permission-ask: "This application requires the following permissions:"
   account-read: "View account information."
   account-write: "Modify account information."
@@ -1506,6 +1506,7 @@ mobile/views/components/post-form.vue:
   location-alert: "Your device does not provide location services"
   error: "Error"
   username-prompt: "Enter user name"
+  quote: "Quote..."
 mobile/views/components/sub-note-content.vue:
   private: "This post is private"
   deleted: "This post has been deleted"

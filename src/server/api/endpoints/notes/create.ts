@@ -39,9 +39,9 @@ export const meta = {
 	params: {
 		visibility: {
 			validator: $.optional.str.or(['public', 'home', 'followers', 'specified', 'private']),
-			default: 'public',
+			default: undefined as any,
 			desc: {
-				'ja-JP': '投稿の公開範囲'
+				'ja-JP': '投稿の公開範囲。未指定の場合は、renoteId が指定されている場合は home に、指定されていなければ public になります。'
 			}
 		},
 
@@ -227,6 +227,10 @@ export const meta = {
 };
 
 export default define(meta, async (ps, user, app) => {
+	if (ps.visibility == null) {
+		ps.visibility = ps.renoteId ? 'home' : 'public';
+	}
+
 	let visibleUsers: IUser[] = [];
 	if (ps.visibleUserIds) {
 		visibleUsers = await Promise.all(ps.visibleUserIds.map(id => User.findOne({
