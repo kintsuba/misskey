@@ -1,7 +1,7 @@
 {
 	"name": "misskey",
 	"author": "syuilo <i@syuilo.com>",
-	"version": "11.24.2",
+	"version": "11.24.2-20190707024628",
 	"codename": "daybreak",
 	"repository": {
 		"type": "git",
@@ -129,7 +129,6 @@
 		"eventemitter3": "4.0.0",
 		"feed": "3.0.0",
 		"file-type": "12.0.0",
-		"fuckadblock": "3.2.1",
 		"gulp": "4.0.2",
 		"gulp-cssnano": "2.1.3",
 		"gulp-imagemin": "6.0.0",
