@@ -284,6 +284,7 @@ common:
   hide-password: "Hide Password"
   show-password: "Show Password"
   enter-username: "Please enter username"
+  reload: "Reload"
   do-not-use-in-production: "This is a development build. Do not use in production."
   user-suspended: "This user has been suspended."
   is-remote-user: "The information about this user may not be entirely complete."
