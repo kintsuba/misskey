@@ -194,7 +194,7 @@ common:
     pasted-file-name: "Template for pasted file name"
     pasted-file-name-desc: "Example: \"yyyy-MM-dd HH-mm-ss [{{number}}]\" → \"2018-03-20 21-30-24 1\""
     paste-dialog: "Edit the pasted file name"
-    paste-dialog-desc: "Display the dialog to edit the file name when you pasting file."
+    paste-dialog-desc: "Display a dialog to edit the file name when you paste a file."
     keep-cw: "Preserve content warning"
     keep-cw-desc: "When replying to a post, the same content warning is set by default to the reply, as has been set by the original post."
     i-like-sushi: "I prefer sushi rather than pudding"
@@ -278,6 +278,8 @@ common:
     load-raw-images: "Show attached images in original quality"
     load-remote-media: "Show media from a remote server"
     sync: "Sync"
+    save: "Save"
+    saved: "Saved"
     home-profile: "Home profile"
     deck-profile: "Deck profile"
   search: "Search"
@@ -1862,6 +1864,12 @@ pages:
           message: "Message to display when pressed"
           variable: "Variable to send"
           no-variable: "None"
+    radioButton: "Choices"
+    _radioButton:
+      name: "Variable name"
+      title: "Title"
+      values: "Item of choices that delimited by line breaks"
+      default: "Default value"
   script:
     categories:
       flow: "Control"

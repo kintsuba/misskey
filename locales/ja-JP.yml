@@ -290,6 +290,8 @@ common:
     load-raw-images: "添付された画像を高画質で表示する"
     load-remote-media: "リモートサーバーのメディアを表示する"
     sync: "同期"
+    save: "保存"
+    saved: "保存しました"
     home-profile: "ホームのプロファイル"
     deck-profile: "デッキのプロファイル"
 
@@ -2066,6 +2068,13 @@ pages:
           message: "押したときに表示するメッセージ"
           variable: "送信する変数"
           no-variable: "なし"
+
+    radioButton: "選択肢"
+    _radioButton:
+      name: "変数名"
+      title: "タイトル"
+      values: "改行で区切った選択肢"
+      default: "デフォルト値"
 
   script:
     categories:
