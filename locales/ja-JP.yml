@@ -37,6 +37,7 @@ common:
   signup: "新規登録"
   signout: "ログアウト"
   reload-to-apply-the-setting: "この設定を反映するにはページをリロードする必要があります。今すぐリロードしますか？"
+  unfollow-confirm: "{name}さんをフォロー解除しますか？"
 
   got-it: "わかった"
   customization-tips:
@@ -248,6 +249,7 @@ common:
   verified-user: "公式アカウント"
   hide-password: "パスワードを隠す"
   show-password: "パスワードを表示する"
+  reload: "リロード"
 
   do-not-use-in-production: "これは開発ビルドです。本番環境で使用しないでください。"
   user-suspended: "このユーザーは凍結されています。"
@@ -519,6 +521,7 @@ common/views/components/note-menu.vue:
   delete: "削除"
   delete-confirm: "この投稿を削除しますか？"
   remote: "投稿元で見る"
+  pin-limit-exceeded: "これ以上ピン留めできません。"
 
 common/views/components/user-menu.vue:
   mention: "メンション"

@@ -223,9 +223,16 @@ export default Vue.extend({
 		// 公開以外へのリプライ時は元の公開範囲を引き継ぐ
 		if (this.reply && ['home', 'followers', 'specified'].includes(this.reply.visibility)) {
 			this.visibility = this.reply.visibility;
+			if (this.reply.visibility === 'specified') {
+				this.$root.api('users/show', {
+					userIds: this.reply.visibleUserIds.filter(uid => uid !== this.$store.state.i.id && uid !== this.reply.userId)
+				}).then(users => {
+					this.visibleUsers.push(...users);
+				});
+			}
 		}
 
-		if (this.reply) {
+		if (this.reply && this.reply.userId !== this.$store.state.i.id) {
 			this.$root.api('users/show', { userId: this.reply.userId }).then(user => {
 				this.visibleUsers.push(user);
 			});
@@ -315,8 +322,8 @@ export default Vue.extend({
 			this.saveDraft();
 		},
 
-		upload(file) {
-			(this.$refs.uploader as any).upload(file);
+		upload(file: File, name?: string) {
+			(this.$refs.uploader as any).upload(file, null, name);
 		},
 
 		onChangeUploadings(uploads) {
@@ -336,10 +343,14 @@ export default Vue.extend({
 				&& this.secondaryNoteVisibility != null && this.secondaryNoteVisibility != 'none') this.post(this.secondaryNoteVisibility);
 		},
 
-		onPaste(e) {
+		onPaste(e: ClipboardEvent) {
 			for (const item of Array.from(e.clipboardData.items)) {
 				if (item.kind == 'file') {
-					this.upload(item.getAsFile());
+					const file = item.getAsFile();
+					const lio = file.name.lastIndexOf('.');
+					const ext = lio >= 0 ? file.name.slice(lio) : '';
+					const name = `${new Date().toISOString().replace(/\D/g, '').substr(0, 14)}${ext}`;
+					this.upload(file, name);
 				}
 			}
 		},

@@ -9,10 +9,8 @@ import Vue from 'vue';
 import i18n from '../../../i18n';
 import { url } from '../../../config';
 import copyToClipboard from '../../../common/scripts/copy-to-clipboard';
-import { concat, intersperse } from '../../../../../prelude/array';
 import { faCopy, faEye, faEyeSlash, } from '@fortawesome/free-regular-svg-icons';
 import { faPlaneArrival, faPlaneDeparture } from '@fortawesome/free-solid-svg-icons';
-
 
 export default Vue.extend({
 	i18n: i18n('common/views/components/note-menu.vue'),
@@ -147,6 +145,13 @@ export default Vue.extend({
 					splash: true
 				});
 				this.destroyDom();
+			}).catch(e => {
+				if (e.id === '72dab508-c64d-498f-8740-a8eec1ba385a') {
+					this.$root.dialog({
+						type: 'error',
+						text: this.$t('pin-limit-exceeded')
+					});
+				}
 			});
 		},
 
