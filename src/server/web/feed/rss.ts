@@ -90,7 +90,7 @@ export async function getRSSFeed(acct: string, untilId?: string) {
 			const entry = {
 				title: item.title,
 				link: item.url,
-				'dc:creator': item.author ? item.author.name : undefined,
+				'dc:creator': item.author ? item.author.name : json.author ? json.author.name : undefined,
 				description: item.content_text,
 				'content:encoded': {
 					'#cdata': item.content_html

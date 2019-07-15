@@ -1,10 +1,10 @@
 import config from '../../../config';
 import { Users, Notes, UserProfiles, DriveFiles } from '../../../models';
+import { Note } from '../../../models/entities/note';
+import { IsNull, Not, In, LessThan, FindConditions } from 'typeorm';
+import { ensure } from '../../../prelude/ensure';
 import getNoteHtml from '../../../remote/activitypub/misc/get-note-html';
 import parseAcct from '../../../misc/acct/parse';
-import { ensure } from '../../../prelude/ensure';
-import { IsNull, Not, In, LessThan, FindConditions } from 'typeorm';
-import { Note } from '../../../models/entities/note';
 
 //#region JSON Feed models
 export interface IFeed {
@@ -155,7 +155,7 @@ export async function getJSONFeed(acct: string, untilId?: string) {
 			name,
 			url,
 			avatar: avatar
-		}
+		},
 	} as IFeed;
 
 	feed.items = [];
