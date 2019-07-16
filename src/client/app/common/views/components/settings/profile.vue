@@ -45,6 +45,26 @@
 				<template #desc v-if="bannerUploading">{{ $t('uploading') }}<mk-ellipsis/></template>
 			</ui-input>
 
+			<div class="fields">
+				<header>{{ $t('fields') }}</header>
+				<ui-horizon-group>
+					<ui-input v-model="fieldName0">{{ $t('field-name') }}</ui-input>
+					<ui-input v-model="fieldValue0">{{ $t('field-value') }}</ui-input>
+				</ui-horizon-group>
+				<ui-horizon-group>
+					<ui-input v-model="fieldName1">{{ $t('field-name') }}</ui-input>
+					<ui-input v-model="fieldValue1">{{ $t('field-value') }}</ui-input>
+				</ui-horizon-group>
+				<ui-horizon-group>
+					<ui-input v-model="fieldName2">{{ $t('field-name') }}</ui-input>
+					<ui-input v-model="fieldValue2">{{ $t('field-value') }}</ui-input>
+				</ui-horizon-group>
+				<ui-horizon-group>
+					<ui-input v-model="fieldName3">{{ $t('field-name') }}</ui-input>
+					<ui-input v-model="fieldValue3">{{ $t('field-value') }}</ui-input>
+				</ui-horizon-group>
+			</div>
+
 			<ui-button primary @click="save(true)"><fa :icon="faSave"/> {{ $t('save') }}</ui-button>
 		</ui-form>
 	</section>
@@ -100,9 +120,11 @@
 		</div>
 	</section>
 
-	<section v-if="isAdvanced">
+	<section>
 		<details>
 			<summary>{{ $t('danger-zone') }}</summary>
+			<ui-button v-if="!noFederation" @click="disableFederation()">{{ $t('disable-federation') }}</ui-button>
+			<ui-button v-if="noFederation" @click="enableFederation()">{{ $t('enable-federation') }}</ui-button>
 		</details>
 	</section>
 </ui-card>
@@ -138,6 +160,7 @@ export default Vue.extend({
 			isLocked: false,
 			carefulBot: false,
 			autoAcceptFollowed: false,
+			noFederation: false,
 			saving: false,
 			avatarUploading: false,
 			bannerUploading: false,
@@ -178,6 +201,18 @@ export default Vue.extend({
 		this.isLocked = this.$store.state.i.isLocked;
 		this.carefulBot = this.$store.state.i.carefulBot;
 		this.autoAcceptFollowed = this.$store.state.i.autoAcceptFollowed;
+		this.noFederation = this.$store.state.i.noFederation;
+
+		if (this.$store.state.i.fields) {
+			this.fieldName0 = this.$store.state.i.fields[0].name;
+			this.fieldValue0 = this.$store.state.i.fields[0].value;
+			this.fieldName1 = this.$store.state.i.fields[1].name;
+			this.fieldValue1 = this.$store.state.i.fields[1].value;
+			this.fieldName2 = this.$store.state.i.fields[2].name;
+			this.fieldValue2 = this.$store.state.i.fields[2].value;
+			this.fieldName3 = this.$store.state.i.fields[3].name;
+			this.fieldValue3 = this.$store.state.i.fields[3].value;
+		}
 	},
 
 	methods: {
@@ -228,6 +263,13 @@ export default Vue.extend({
 		},
 
 		save(notify) {
+			const fields = [
+				{ name: this.fieldName0, value: this.fieldValue0 },
+				{ name: this.fieldName1, value: this.fieldValue1 },
+				{ name: this.fieldName2, value: this.fieldValue2 },
+				{ name: this.fieldName3, value: this.fieldValue3 },
+			];
+
 			this.saving = true;
 
 			this.$root.api('i/update', {
@@ -241,7 +283,8 @@ export default Vue.extend({
 				isBot: !!this.isBot,
 				isLocked: !!this.isLocked,
 				carefulBot: !!this.carefulBot,
-				autoAcceptFollowed: !!this.autoAcceptFollowed
+				autoAcceptFollowed: !!this.autoAcceptFollowed,
+				fields,
 			}).then(i => {
 				this.saving = false;
 				this.$store.state.i.avatarId = i.avatarId;
@@ -314,6 +357,42 @@ export default Vue.extend({
 			});
 		},
 
+		async disableFederation() {
+			this.$root.dialog({
+				type: 'warning',
+				text: this.$t('disable-federation-confirm'),
+				showCancelButton: true
+			}).then(({ canceled }) => {
+				if (canceled) return;
+
+				this.saving = true;
+				this.noFederation = true;
+				this.$root.api('i/update', {
+					noFederation: this.noFederation
+				}).then(i => {
+					this.saving = false;
+					this.$root.dialog({
+						type: 'success',
+						text: 'Saved'
+					});
+				});
+			});
+		},
+
+		async enableFederation() {
+			this.saving = true;
+			this.noFederation = false;
+			this.$root.api('i/update', {
+				noFederation: this.noFederation
+			}).then(i => {
+				this.saving = false;
+				this.$root.dialog({
+					type: 'success',
+					text: 'Saved'
+				});
+			});
+		},
+
 		async deleteAccount() {
 			const { canceled: canceled, result: password } = await this.$root.dialog({
 				title: this.$t('enter-password'),
@@ -355,5 +434,12 @@ export default Vue.extend({
 			width 72px
 			height 72px
 			margin auto
+
+.fields
+	> header
+		padding 8px 0px
+		font-weight bold
+	> div
+		padding-left 16px
 
 </style>
