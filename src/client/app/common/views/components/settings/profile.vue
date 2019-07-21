@@ -46,22 +46,22 @@
 			</ui-input>
 
 			<div class="fields">
-				<header>{{ $t('fields') }}</header>
+				<header>{{ $t('profile-metadata') }}</header>
 				<ui-horizon-group>
-					<ui-input v-model="fieldName0">{{ $t('field-name') }}</ui-input>
-					<ui-input v-model="fieldValue0">{{ $t('field-value') }}</ui-input>
+					<ui-input v-model="fieldName0">{{ $t('metadata-label') }}</ui-input>
+					<ui-input v-model="fieldValue0">{{ $t('metadata-content') }}</ui-input>
 				</ui-horizon-group>
 				<ui-horizon-group>
-					<ui-input v-model="fieldName1">{{ $t('field-name') }}</ui-input>
-					<ui-input v-model="fieldValue1">{{ $t('field-value') }}</ui-input>
+					<ui-input v-model="fieldName1">{{ $t('metadata-label') }}</ui-input>
+					<ui-input v-model="fieldValue1">{{ $t('metadata-content') }}</ui-input>
 				</ui-horizon-group>
 				<ui-horizon-group>
-					<ui-input v-model="fieldName2">{{ $t('field-name') }}</ui-input>
-					<ui-input v-model="fieldValue2">{{ $t('field-value') }}</ui-input>
+					<ui-input v-model="fieldName2">{{ $t('metadata-label') }}</ui-input>
+					<ui-input v-model="fieldValue2">{{ $t('metadata-content') }}</ui-input>
 				</ui-horizon-group>
 				<ui-horizon-group>
-					<ui-input v-model="fieldName3">{{ $t('field-name') }}</ui-input>
-					<ui-input v-model="fieldValue3">{{ $t('field-value') }}</ui-input>
+					<ui-input v-model="fieldName3">{{ $t('metadata-label') }}</ui-input>
+					<ui-input v-model="fieldValue3">{{ $t('metadata-content') }}</ui-input>
 				</ui-horizon-group>
 			</div>
 
@@ -161,6 +161,14 @@ export default Vue.extend({
 			carefulBot: false,
 			autoAcceptFollowed: false,
 			noFederation: false,
+			fieldName0 : null,
+			fieldValue0 : null,
+			fieldName1 : null,
+			fieldValue1 : null,
+			fieldName2 : null,
+			fieldValue2 : null,
+			fieldName3 : null,
+			fieldValue3 : null,
 			saving: false,
 			avatarUploading: false,
 			bannerUploading: false,
@@ -204,14 +212,17 @@ export default Vue.extend({
 		this.noFederation = this.$store.state.i.noFederation;
 
 		if (this.$store.state.i.fields) {
-			this.fieldName0 = this.$store.state.i.fields[0].name;
-			this.fieldValue0 = this.$store.state.i.fields[0].value;
-			this.fieldName1 = this.$store.state.i.fields[1].name;
-			this.fieldValue1 = this.$store.state.i.fields[1].value;
-			this.fieldName2 = this.$store.state.i.fields[2].name;
-			this.fieldValue2 = this.$store.state.i.fields[2].value;
-			this.fieldName3 = this.$store.state.i.fields[3].name;
-			this.fieldValue3 = this.$store.state.i.fields[3].value;
+			const fetchName = (i: number) => this.$store.state.i.fields[i] ? this.$store.state.i.fields[i].name : null;
+			const fetchValue = (i: number) => this.$store.state.i.fields[i] ? this.$store.state.i.fields[i].value : null;
+
+			this.fieldName0 = fetchName(0);
+			this.fieldValue0 = fetchValue(0);
+			this.fieldName1 = fetchName(1);
+			this.fieldValue1 = fetchValue(1);
+			this.fieldName2 = fetchName(2);
+			this.fieldValue3 = fetchValue(2);
+			this.fieldName3 = fetchName(3);
+			this.fieldValue3 = fetchValue(3);
 		}
 	},
 
@@ -297,6 +308,29 @@ export default Vue.extend({
 						type: 'success',
 						text: this.$t('saved')
 					});
+				}
+			}).catch(err => {
+				this.saving = false;
+				switch(err.id) {
+					case 'f419f9f8-2f4d-46b1-9fb4-49d3a2fd7191':
+						this.$root.dialog({
+							type: 'error',
+							title: this.$t('unable-to-process'),
+							text: this.$t('avatar-not-an-image')
+						});
+						break;
+					case '75aedb19-2afd-4e6d-87fc-67941256fa60':
+						this.$root.dialog({
+							type: 'error',
+							title: this.$t('unable-to-process'),
+							text: this.$t('banner-not-an-image')
+						});
+						break;
+					default:
+						this.$root.dialog({
+							type: 'error',
+							text: this.$t('unable-to-process')
+						});
 				}
 			});
 		},
@@ -439,7 +473,5 @@ export default Vue.extend({
 	> header
 		padding 8px 0px
 		font-weight bold
-	> div
-		padding-left 16px
 
 </style>

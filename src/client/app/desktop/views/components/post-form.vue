@@ -1,63 +1,74 @@
 <template>
-<div class="mk-post-form"
-	@dragover.stop="onDragover"
-	@dragenter="onDragenter"
-	@dragleave="onDragleave"
-	@drop.stop="onDrop"
->
-	<div class="content">
-		<div v-if="visibility == 'specified'" class="visibleUsers">
-			<span v-for="u in visibleUsers">
-				<mk-user-name :user="u"/><a @click="removeVisibleUser(u)">[x]</a>
-			</span>
-			<a @click="addVisibleUser">{{ $t('add-visible-user') }}</a>
+<div>
+	<div class="mk-post-form"
+		@dragover.stop="onDragover"
+		@dragenter="onDragenter"
+		@dragleave="onDragleave"
+		@drop.stop="onDrop"
+	>
+		<div class="content">
+			<div v-if="visibility == 'specified'" class="visibleUsers">
+				<span v-for="u in visibleUsers">
+					<mk-user-name :user="u"/><a @click="removeVisibleUser(u)">[x]</a>
+				</span>
+				<a @click="addVisibleUser">{{ $t('add-visible-user') }}</a>
+			</div>
+			<div class="hashtags" v-if="recentHashtags.length > 0 && $store.state.settings.suggestRecentHashtags">
+				<b>{{ $t('recent-tags') }}:</b>
+				<a v-for="tag in recentHashtags.slice(0, 5)" @click="addTag(tag)" :title="$t('click-to-tagging')">#{{ tag }}</a>
+			</div>
+			<div class="local-only" v-if="localOnly == true">{{ $t('local-only-message') }}</div>
+			<input v-show="useCw" ref="cw" v-model="cw" :placeholder="$t('annotations')" v-autocomplete="{ model: 'cw' }">
+			<div class="textarea">
+				<textarea :class="{ with: (files.length != 0 || poll) }"
+					ref="text" v-model="text" :disabled="posting"
+					@keydown="onKeydown" @paste="onPaste" :placeholder="placeholder"
+					v-autocomplete="{ model: 'text' }"
+				></textarea>
+				<button class="emoji" @click="emoji" ref="emoji">
+					<fa :icon="['far', 'laugh']"/>
+				</button>
+				<x-post-form-attaches class="files" :files="files" :detachMediaFn="detachMedia"/>
+				<mk-poll-editor v-if="poll" ref="poll" @destroyed="poll = false" @updated="onPollUpdate()"/>
+			</div>
 		</div>
-		<div class="hashtags" v-if="recentHashtags.length > 0 && $store.state.settings.suggestRecentHashtags">
-			<b>{{ $t('recent-tags') }}:</b>
-			<a v-for="tag in recentHashtags.slice(0, 5)" @click="addTag(tag)" :title="$t('click-to-tagging')">#{{ tag }}</a>
-		</div>
-		<div class="local-only" v-if="localOnly == true">{{ $t('local-only-message') }}</div>
-		<input v-show="useCw" ref="cw" v-model="cw" :placeholder="$t('annotations')" v-autocomplete="{ model: 'cw' }">
-		<div class="textarea">
-			<textarea :class="{ with: (files.length != 0 || poll) }"
-				ref="text" v-model="text" :disabled="posting"
-				@keydown="onKeydown" @paste="onPaste" :placeholder="placeholder"
-				v-autocomplete="{ model: 'text' }"
-			></textarea>
-			<button class="emoji" @click="emoji" ref="emoji">
-				<fa :icon="['far', 'laugh']"/>
+		<mk-uploader ref="uploader" @uploaded="attachMedia" @change="onChangeUploadings"/>
+		
+		<footer>
+			<button class="upload" :title="$t('attach-media-from-local')" @click="chooseFile"><fa icon="upload"/></button>
+			<button class="drive" :title="$t('attach-media-from-drive')" @click="chooseFileFromDrive"><fa icon="cloud"/></button>
+			<button class="kao" :title="$t('insert-a-kao')" @click="kao"><fa :icon="['far', 'smile']"/></button>
+			<button class="poll" :title="$t('create-poll')" @click="poll = !poll"><fa icon="chart-pie"/></button>
+			<button class="cw" :title="$t('hide-contents')" @click="useCw = !useCw"><fa :icon="['far', 'eye-slash']"/></button>
+			<button class="visibility" :title="$t('visibility')" @click="setVisibility" ref="visibilityButton">
+				<x-visibility-icon :v="visibility" :localOnly="localOnly"/>
 			</button>
-			<x-post-form-attaches class="files" :files="files" :detachMediaFn="detachMedia"/>
-			<mk-poll-editor v-if="poll" ref="poll" @destroyed="poll = false" @updated="onPollUpdate()"/>
-		</div>
-	</div>
-	<mk-uploader ref="uploader" @uploaded="attachMedia" @change="onChangeUploadings"/>
-	
-	<footer>
-		<button class="upload" :title="$t('attach-media-from-local')" @click="chooseFile"><fa icon="upload"/></button>
-		<button class="drive" :title="$t('attach-media-from-drive')" @click="chooseFileFromDrive"><fa icon="cloud"/></button>
-		<button class="kao" :title="$t('insert-a-kao')" @click="kao"><fa :icon="['far', 'smile']"/></button>
-		<button class="poll" :title="$t('create-poll')" @click="poll = !poll"><fa icon="chart-pie"/></button>
-		<button class="cw" :title="$t('hide-contents')" @click="useCw = !useCw"><fa :icon="['far', 'eye-slash']"/></button>
-		<button class="visibility" :title="$t('visibility')" @click="setVisibility" ref="visibilityButton">
-			<x-visibility-icon :v="visibility" :localOnly="localOnly"/>
-		</button>
-		<div class="text-count" :class="{ over: trimmedLength(text) > maxNoteTextLength }">{{ maxNoteTextLength - trimmedLength(text) }}</div>
-		<ui-button v-if="tertiaryNoteVisibility != null && tertiaryNoteVisibility != 'none'" inline :wait="posting" class="tertiary" :disabled="!canPost" @click="post(tertiaryNoteVisibility)" title="Tertiary Post">
-			<mk-ellipsis v-if="posting"/>
-			<x-visibility-icon v-else :v="tertiaryNoteVisibility"/>
-		</ui-button>
-		<ui-button v-if="secondaryNoteVisibility != null && secondaryNoteVisibility != 'none'" inline :wait="posting" class="secondary" :disabled="!canPost" @click="post(secondaryNoteVisibility)" title="Secondary Post (Alt+Enter)">
-			<mk-ellipsis v-if="posting"/>
-			<x-visibility-icon v-else :v="secondaryNoteVisibility"/>
-		</ui-button>
-		<ui-button inline primary :wait="posting" class="submit" :disabled="!canPost" @click="post" title="Post (Ctrl+Enter)">
-			{{ posting ? $t('posting') : submitText }}<mk-ellipsis v-if="posting"/>
-		</ui-button>
-	</footer>
+			<div class="text-count" :class="{ over: trimmedLength(text) > maxNoteTextLength }">{{ maxNoteTextLength - trimmedLength(text) }}</div>
+			<ui-button inline :wait="posting" class="submit" :disabled="!canPost" @click="post(null, true)">
+				{{ posting ? $t('posting') : $t('preview') }}<mk-ellipsis v-if="posting"/>
+			</ui-button>
+			<ui-button v-if="tertiaryNoteVisibility != null && tertiaryNoteVisibility != 'none'" inline :wait="posting" class="tertiary" :disabled="!canPost" @click="post(tertiaryNoteVisibility)" title="Tertiary Post">
+				<mk-ellipsis v-if="posting"/>
+				<x-visibility-icon v-else :v="tertiaryNoteVisibility"/>
+			</ui-button>
+			<ui-button v-if="secondaryNoteVisibility != null && secondaryNoteVisibility != 'none'" inline :wait="posting" class="secondary" :disabled="!canPost" @click="post(secondaryNoteVisibility)" title="Secondary Post (Alt+Enter)">
+				<mk-ellipsis v-if="posting"/>
+				<x-visibility-icon v-else :v="secondaryNoteVisibility"/>
+			</ui-button>
+			<ui-button inline primary :wait="posting" class="submit" :disabled="!canPost" @click="post" title="Post (Ctrl+Enter)">
+				{{ posting ? $t('posting') : submitText }}<mk-ellipsis v-if="posting"/>
+			</ui-button>
+		</footer>
 
-	<input ref="file" type="file" multiple="multiple" tabindex="-1" @change="onChangeFile"/>
-	<div class="dropzone" v-if="draghover"></div>
+		<input ref="file" type="file" multiple="multiple" tabindex="-1" @change="onChangeFile"/>
+		<div class="dropzone" v-if="draghover"></div>
+	</div>
+	<div v-if="preview" class="preview">
+		<button class="close" @click="preview = null">
+			<fa icon="times"/>
+		</button>
+		<mk-note class="note" :note="preview" :key="preview.id" :preview="true" />
+	</div>
 </div>
 </template>
 
@@ -112,6 +123,7 @@ export default Vue.extend({
 	data() {
 		return {
 			posting: false,
+			preview: null,
 			text: '',
 			files: [],
 			uploadings: [],
@@ -331,6 +343,7 @@ export default Vue.extend({
 		},
 
 		clear() {
+			this.preview = null;
 			this.text = '';
 			this.files = [];
 			this.poll = false;
@@ -443,7 +456,7 @@ export default Vue.extend({
 			});
 		},
 
-		post(v: any) {
+		post(v: any, preview: boolean) {
 			let visibility = this.visibility;
 			let localOnly = this.localOnly;
 
@@ -461,6 +474,7 @@ export default Vue.extend({
 			this.posting = true;
 
 			this.$root.api('notes/create', {
+				preview,
 				text: this.text == '' ? undefined : this.text,
 				fileIds: this.files.length > 0 ? this.files.map(f => f.id) : undefined,
 				replyId: this.reply ? this.reply.id : undefined,
@@ -472,6 +486,10 @@ export default Vue.extend({
 				localOnly,
 				geo: null
 			}).then(data => {
+				if (preview) {
+					this.preview = data.createdNote;
+					return;
+				}
 				this.clear();
 				this.deleteDraft();
 				this.$emit('posted');
@@ -595,7 +613,7 @@ export default Vue.extend({
 				margin 0
 				max-width 100%
 				min-width 100%
-				min-height 84px
+				min-height 88px
 
 				&:hover
 					& + * + *
@@ -774,4 +792,16 @@ export default Vue.extend({
 		border dashed 2px var(--primaryAlpha05)
 		pointer-events none
 
+.preview
+	> .close
+		position absolute
+		top 0
+		right 0
+		z-index 1000
+		padding 4px 8px
+		color var(--primaryAlpha04)
+
+	> .note
+		border-top solid var(--lineWidth) var(--faceDivider)
+		background var(--desktopPostFormBg)
 </style>
