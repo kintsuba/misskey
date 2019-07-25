@@ -5,12 +5,12 @@
 			<span class="icon" v-if="geo"><fa icon="map-marker-alt"/></span>
 			<span v-if="!reply">{{ $t('note') }}</span>
 			<span v-if="reply">{{ $t('reply') }}</span>
-			<span class="count" v-if="files.length != 0">{{ this.$t('attaches').replace('{}', files.length) }}</span>
-			<span class="count" v-if="uploadings.length != 0">{{ this.$t('uploading-media').replace('{}', uploadings.length) }}<mk-ellipsis/></span>
+			<span class="count" v-if="files.length != 0">{{ $t('attaches').replace('{}', files.length) }}</span>
+			<span class="count" v-if="uploadings.length != 0">{{ $t('uploading-media').replace('{}', uploadings.length) }}<mk-ellipsis/></span>
 		</span>
 	</template>
 
-	<div class="mk-post-form-window--body">
+	<div class="mk-post-form-window--body" :style="{ maxHeight: `${maxHeight}px` }">
 		<mk-note-preview v-if="reply" class="notePreview" :note="reply"/>
 		<x-post-form ref="form"
 			:reply="reply"
@@ -59,6 +59,12 @@ export default Vue.extend({
 			files: [],
 			geo: null
 		};
+	},
+
+	computed: {
+		maxHeight() {
+			return window.innerHeight - 50;
+		},
 	},
 
 	mounted() {
