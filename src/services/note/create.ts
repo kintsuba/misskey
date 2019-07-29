@@ -1,6 +1,6 @@
 import es from '../../db/elasticsearch';
 import { publishMainStream, publishNotesStream } from '../stream';
-import { deliver } from '../../queue';
+import { deliver, createDeleteNoteJob } from '../../queue';
 import renderNote from '../../remote/activitypub/renderer/note';
 import renderCreate from '../../remote/activitypub/renderer/create';
 import renderAnnounce from '../../remote/activitypub/renderer/announce';
@@ -189,6 +189,8 @@ export default async (user: User, data: Option, silent = false) => new Promise<N
 
 	res(note);
 
+	queueDelete(note, tags);
+
 	// 統計を更新
 	notesChart.update(note, true);
 	perUserNotesChart.update(user, note, true);
@@ -304,6 +306,18 @@ export default async (user: User, data: Option, silent = false) => new Promise<N
 	// Register to search database
 	index(note);
 });
+
+async function queueDelete(note: Note, tags: string[]) {
+	for (const tag of tags) {
+		const m = tag.match(/^exp(\d{1,5})([smh])$/);
+		if (!m) continue;
+
+		const delay = 1000 * Number(m[1]) * (m[2] === 'm' ? 60 : m[2] === 'h' ? 3600 : 1);
+
+		createDeleteNoteJob(note, delay);
+		break;
+	}
+}
 
 async function renderNoteOrRenoteActivity(data: Option, note: Note) {
 	if (data.localOnly) return null;

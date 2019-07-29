@@ -11,6 +11,7 @@ import processDb from './processors/db';
 import procesObjectStorage from './processors/object-storage';
 import { queueLogger } from './logger';
 import { DriveFile } from '../models/entities/drive-file';
+import { Note } from '../models/entities/note';
 
 function initializeQueue(name: string) {
 	return new Queue(name, {
@@ -115,6 +116,16 @@ export function createDeleteDriveFilesJob(user: ILocalUser) {
 	return dbQueue.add('deleteDriveFiles', {
 		user: user
 	}, {
+		removeOnComplete: true,
+		removeOnFail: true
+	});
+}
+
+export function createDeleteNoteJob(note: Note, delay: number) {
+	return dbQueue.add('deleteNote', {
+		noteId: note.id
+	}, {
+		delay,
 		removeOnComplete: true,
 		removeOnFail: true
 	});
