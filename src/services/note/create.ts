@@ -189,7 +189,9 @@ export default async (user: User, data: Option, silent = false) => new Promise<N
 
 	res(note);
 
-	queueDelete(note, tags);
+	if (Users.isLocalUser(user)) {
+		queueDelete(note, tags);
+	}
 
 	// 統計を更新
 	notesChart.update(note, true);
