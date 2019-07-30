@@ -1,8 +1,8 @@
 <template>
 <div class="mkw-notifications">
 	<ui-container :show-header="!props.compact">
-		<template #header><fa :icon="['far', 'bell']"/>{{ props.type === 'all' ? $t('title') : $t('@.notification-types.' + props.type) }}</template>
-		<template #func><button :title="$t('@.notification-type')" @click="settings"><fa icon="cog"/></button></template>
+		<template #header><fa :icon="['far', 'bell']"/>{{ props.type === 'all' ? $t('title') : $t('title') + ' (' + $t('@.notification-types.' + props.type) + ')' }}</template>
+		<template #func><button :title="$t('@.notification-type')" @click="settings" :class="{ filtered }"><fa :icon="faFilter"/></button></template>
 
 		<mk-notifications :class="$style.notifications" :type="props.type === 'all' ? null : props.type"/>
 	</ui-container>
@@ -12,6 +12,7 @@
 <script lang="ts">
 import define from '../../../common/define-widget';
 import i18n from '../../../i18n';
+import { faFilter } from '@fortawesome/free-solid-svg-icons';
 
 export default define({
 	name: 'notifications',
@@ -21,8 +22,23 @@ export default define({
 	})
 }).extend({
 	i18n: i18n('desktop/views/widgets/notifications.vue'),
+	data() {
+		return {
+			faFilter,
+		};
+	},
+	computed: {
+		filtered(): Boolean {
+			return this.props.type !== 'all';
+		},
+	},
 	methods: {
 		settings() {
+			if (this.filtered) {
+				this.props.type = 'all';
+				return;
+			}
+
 			this.$root.dialog({
 				title: this.$t('@.notification-type'),
 				type: null,
@@ -51,5 +67,9 @@ export default define({
 .notifications
 	max-height 300px
 	overflow auto
+</style>
 
+<style lang="stylus" scoped>
+.filtered
+	color var(--primary) !important
 </style>

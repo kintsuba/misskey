@@ -2,7 +2,7 @@
 <mk-ui>
 	<template #header><fa :icon="faBell"/> {{ $t('notifications') }}</template>
 	<template #func>
-		<button @click="filter()"><fa icon="cog"/></button>
+		<button @click="filter()" :class="{ filtered }"><fa :icon="faFilter"/></button>
 	</template>
 
 	<main>
@@ -14,6 +14,7 @@
 <script lang="ts">
 import Vue from 'vue';
 import { faBell } from '@fortawesome/free-regular-svg-icons';
+import { faFilter } from '@fortawesome/free-solid-svg-icons';
 import i18n from '../../../i18n';
 import Progress from '../../../common/scripts/loading';
 
@@ -22,8 +23,13 @@ export default Vue.extend({
 	data() {
 		return {
 			type: 'all',
-			faBell,
+			faBell, faFilter,
 		};
+	},
+	computed: {
+		filtered(): Boolean {
+			return this.type !== 'all';
+		},
 	},
 	methods: {
 		beforeInit() {
@@ -33,6 +39,11 @@ export default Vue.extend({
 			Progress.done();
 		},
 		filter() {
+			if (this.filtered) {
+				this.type = 'all';
+				return;
+			}
+
 			this.$root.dialog({
 				title: this.$t('@.notification-type'),
 				type: null,
@@ -65,4 +76,7 @@ main > *
 
 		@media (min-width 500px)
 			box-shadow 0 8px 32px rgba(#000, 0.1)
+
+.filtered
+	color var(--primary) !important
 </style>
