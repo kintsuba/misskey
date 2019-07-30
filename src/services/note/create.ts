@@ -314,7 +314,9 @@ async function queueDelete(note: Note, tags: string[]) {
 		const m = tag.match(/^exp(\d{1,5})([smh])$/);
 		if (!m) continue;
 
-		const delay = 1000 * Number(m[1]) * (m[2] === 'm' ? 60 : m[2] === 'h' ? 3600 : 1);
+		let delay = 1000 * Number(m[1]) * (m[2] === 'm' ? 60 : m[2] === 'h' ? 3600 : 1);
+		if (delay < 5) delay = 5;
+		if (delay > 86400) delay = 86400;
 
 		createDeleteNoteJob(note, delay);
 		break;
