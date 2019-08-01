@@ -18,6 +18,7 @@
 				<a v-for="tag in recentHashtags.slice(0, 5)" @click="addTag(tag)" :title="$t('click-to-tagging')">#{{ tag }}</a>
 			</div>
 			<div class="local-only" v-if="localOnly == true">{{ $t('local-only-message') }}</div>
+			<div class="local-only-remote" v-if="isUnreachable">ローカルのみでリモートリプライしてもとどきません</div>
 			<input v-show="useCw" ref="cw" v-model="cw" :placeholder="$t('annotations')" v-autocomplete="{ model: 'cw' }">
 			<div class="textarea">
 				<textarea :class="{ with: (files.length != 0 || poll) }"
@@ -44,9 +45,6 @@
 				<x-visibility-icon :v="visibility" :localOnly="localOnly"/>
 			</button>
 			<div class="text-count" :class="{ over: trimmedLength(text) > maxNoteTextLength }">{{ maxNoteTextLength - trimmedLength(text) }}</div>
-			<ui-button inline :wait="posting" class="submit" :disabled="!canPost" @click="post(null, true)">
-				{{ posting ? $t('posting') : $t('preview') }}<mk-ellipsis v-if="posting"/>
-			</ui-button>
 			<ui-button v-if="tertiaryNoteVisibility != null && tertiaryNoteVisibility != 'none'" inline :wait="posting" class="tertiary" :disabled="!canPost" @click="post(tertiaryNoteVisibility)" title="Tertiary Post">
 				<mk-ellipsis v-if="posting"/>
 				<x-visibility-icon v-else :v="tertiaryNoteVisibility"/>
@@ -63,12 +61,10 @@
 		<input ref="file" type="file" multiple="multiple" tabindex="-1" @change="onChangeFile"/>
 		<div class="dropzone" v-if="draghover"></div>
 	</div>
-	<div v-if="preview" class="preview">
-		<button class="close" @click="preview = null">
-			<fa icon="times"/>
-		</button>
-		<mk-note class="note" :note="preview" :key="preview.id" :preview="true" />
-	</div>
+	<details v-if="preview" class="preview" ref="preview" :open="$store.state.device.showPostPreview" @toggle="togglePreview">
+		<summary>{{ $t('preview') }}</summary>
+		<mk-note class="note" :note="preview" :key="preview.id" :compact="true" :preview="true" />
+	</details>
 </div>
 </template>
 
@@ -86,6 +82,7 @@ import { toASCII } from 'punycode';
 import extractMentions from '../../../../../misc/extract-mentions';
 import XPostFormAttaches from '../../../common/views/components/post-form-attaches.vue';
 import XVisibilityIcon from '../../../common/views/components/visibility-icon.vue';
+import { nyaize } from '../../../../../misc/nyaize';
 
 export default Vue.extend({
 	i18n: i18n('desktop/views/components/post-form.vue'),
@@ -118,6 +115,21 @@ export default Vue.extend({
 			required: false,
 			default: false
 		}
+	},
+
+	watch: {
+		text() {
+			this.doPreview();
+		},
+		files() {
+			this.doPreview();
+		},
+		visibility() {
+			this.doPreview();
+		},
+		localOnly() {
+			this.doPreview();
+		},
 	},
 
 	data() {
@@ -185,6 +197,11 @@ export default Vue.extend({
 				: this.reply
 					? this.$t('reply')
 					: this.$t('submit');
+		},
+
+		isUnreachable(): boolean {
+			const toRemote = this.reply && this.reply.user.host != null;
+			return this.localOnly && toRemote;
 		},
 
 		canPost(): boolean {
@@ -456,6 +473,28 @@ export default Vue.extend({
 			});
 		},
 
+		togglePreview() {
+			this.$store.commit('device/set', { key: 'showPostPreview', value: this.$refs.preview.open });
+		},
+
+		doPreview() {
+			this.preview = this.canPost ? {
+				id: `${Math.random()}`,
+				createdAt: new Date().toISOString(),
+				userId: this.$store.state.i.id,
+				user: this.$store.state.i,
+				text: this.text === '' ? undefined : this.$store.state.i.isCat ? nyaize(this.text) : this.text,
+				visibility: this.visibility,
+				localOnly: this.localOnly,
+				fileIds: this.files.length > 0 ? this.files.map(f => f.id) : undefined,
+				files: this.files || [],
+				replyId: this.reply ? this.reply.id : undefined,
+				reply: this.reply,
+				renoteId: this.renote ? this.renote.id : this.quoteId ? this.quoteId : undefined,
+				renote: this.renote,
+			} : null;
+		},
+
 		post(v: any, preview: boolean) {
 			let visibility = this.visibility;
 			let localOnly = this.localOnly;
@@ -712,7 +751,7 @@ export default Vue.extend({
 				margin-right 8px
 				white-space nowrap
 
-		> .local-only
+		> .local-only, .local-only-remote
 			margin 0 0 8px 0
 			color var(--primary)
 
@@ -793,15 +832,13 @@ export default Vue.extend({
 		pointer-events none
 
 .preview
-	> .close
-		position absolute
-		top 0
-		right 0
-		z-index 1000
-		padding 4px 8px
-		color var(--primaryAlpha04)
+	background var(--desktopPostFormBg)
+
+	> summary
+		padding 0px 16px 16px 20px
+		font-size 14px
+		color var(--text)
 
 	> .note
 		border-top solid var(--lineWidth) var(--faceDivider)
-		background var(--desktopPostFormBg)
 </style>
