@@ -43,21 +43,19 @@ export default async function(ctx: Koa.BaseContext) {
 		}
 
 		ctx.set('Content-Type', type);
-		ctx.set('Cache-Control', 'max-age=604800, immutable');
+		ctx.set('Cache-Control', 'max-age=31536000, immutable');
 		ctx.body = fs.readFileSync(path);
 	} catch (e) {
 		serverLogger.error(e);
 
 		// ハッシュをリセットしてもう採用しないようにする
 		const defered = () => {
-			/*
 			console.log(`Update emoji md5 ${emoji.md5} => null`);
 			Emoji.update({ _id: emoji._id }, {
 				$set: {
 					md5: null
 				}
 			});
-			*/
 		};
 
 		if (typeof e == 'number' && e >= 400 && e < 500) {
