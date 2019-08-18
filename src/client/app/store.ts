@@ -77,6 +77,8 @@ const defaultDeviceSettings = {
 	expandUsersActivity: true,
 	enableMobileQuickNotificationView: false,
 	showPostPreview: true,
+	roomGraphicsQuality: 'medium',
+	roomUseOrthographicCamera: true,
 };
 
 export default (os: MiOS) => new Vuex.Store({

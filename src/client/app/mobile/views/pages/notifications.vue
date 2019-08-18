@@ -31,6 +31,9 @@ export default Vue.extend({
 			return this.type !== 'all';
 		},
 	},
+	mounted() {
+		document.title = this.$root.instanceName;
+	},
 	methods: {
 		beforeInit() {
 			Progress.start();
