@@ -321,4 +321,38 @@
 			},
 		},
 	},
+	{
+		id: "sofa",
+		place: "floor",
+		props: {
+			color: 'color'
+		},
+		color: {
+			Sofa: 'color'
+		}
+	},
+	{
+		id: "spiral",
+		place: "floor",
+		props: {
+			color: 'color'
+		},
+		color: {
+			Step: 'color'
+		}
+	},
+	{
+		id: "bin",
+		place: "floor",
+		props: {
+			color: 'color'
+		},
+		color: {
+			Bin: 'color'
+		}
+	},
+	{
+		id: "cup-noodle",
+		place: "floor"
+	}
 ]

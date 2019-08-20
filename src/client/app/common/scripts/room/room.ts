@@ -21,6 +21,9 @@ type Options = {
 	useOrthographicCamera: boolean;
 };
 
+/**
+ * MisskeyRoom Core Engine
+ */
 export class Room {
 	private clock: THREE.Clock;
 	private scene: THREE.Scene;
@@ -37,7 +40,11 @@ export class Room {
 	private selectedObject: THREE.Object3D = null;
 	private onChangeSelect: Function;
 	private isTransformMode = false;
-	public canvas: HTMLCanvasElement;
+	private renderFrameRequestId: number;
+
+	private get canvas(): HTMLCanvasElement {
+		return this.renderer.domElement;
+	}
 
 	private get furnitures(): Furniture[] {
 		return this.roomInfo.furnitures;
@@ -95,7 +102,6 @@ export class Room {
 		this.renderer.autoClear = false;
 		this.renderer.setClearColor(new THREE.Color(0x051f2d));
 		this.renderer.shadowMap.enabled = this.enableShadow;
-		this.renderer.gammaOutput = true;
 		this.renderer.shadowMap.type =
 			this.graphicsQuality === 'ultra' ? THREE.PCFSoftShadowMap :
 			this.graphicsQuality === 'high' ? THREE.PCFSoftShadowMap :
@@ -103,8 +109,7 @@ export class Room {
 			this.graphicsQuality === 'low' ? THREE.BasicShadowMap :
 			THREE.BasicShadowMap; // cheep
 
-		this.canvas = this.renderer.domElement;
-		container.appendChild(this.renderer.domElement);
+		container.appendChild(this.canvas);
 		//#endregion
 
 		//#region Init a camera
@@ -151,22 +156,29 @@ export class Room {
 		}
 
 		//#region Out light
-		const outLight = new THREE.SpotLight(0xffffff, 0.4);
+		const outLight1 = new THREE.SpotLight(0xffffff, 0.4);
+		outLight1.position.set(9, 3, -2);
+		outLight1.castShadow = this.enableShadow;
+		outLight1.shadow.bias = -0.001; // アクネ、アーチファクト対策 その代わりピーターパンが発生する可能性がある
+		outLight1.shadow.mapSize.width = this.shadowQuality;
+		outLight1.shadow.mapSize.height = this.shadowQuality;
+		outLight1.shadow.camera.near = 6;
+		outLight1.shadow.camera.far = 15;
+		outLight1.shadow.camera.fov = 45;
+		this.scene.add(outLight1);
 
-		outLight.position.set(9, 3, -2);
-		outLight.castShadow = this.enableShadow;
-		outLight.shadow.bias = -0.001; // アクネ、アーチファクト対策 その代わりピーターパンが発生する可能性がある
-		outLight.shadow.mapSize.width = this.shadowQuality;
-		outLight.shadow.mapSize.height = this.shadowQuality;
-		outLight.shadow.camera.near = 6;
-		outLight.shadow.camera.far = 15;
-		outLight.shadow.camera.fov = 45;
-
-		this.scene.add(outLight);
+		const outLight2 = new THREE.SpotLight(0xffffff, 0.2);
+		outLight2.position.set(-2, 3, 9);
+		outLight2.castShadow = false;
+		outLight2.shadow.bias = -0.001; // アクネ、アーチファクト対策 その代わりピーターパンが発生する可能性がある
+		outLight2.shadow.camera.near = 6;
+		outLight2.shadow.camera.far = 15;
+		outLight2.shadow.camera.fov = 45;
+		this.scene.add(outLight2);
 		//#endregion
 
 		//#region Init a controller
-		this.controls = new OrbitControls(this.camera, this.renderer.domElement);
+		this.controls = new OrbitControls(this.camera, this.canvas);
 
 		this.controls.target.set(0, 1, 0);
 		this.controls.enableZoom = true;
@@ -219,8 +231,7 @@ export class Room {
 		iconTexture.wrapT = THREE.RepeatWrapping;
 		iconTexture.anisotropy = 16;
 
-		const avatarMaterial = new THREE.MeshLambertMaterial({
-			emissive: 0x111111,
+		const avatarMaterial = new THREE.MeshBasicMaterial({
 			map: iconTexture,
 			side: THREE.DoubleSide,
 			alphaTest: 0.5
@@ -266,14 +277,14 @@ export class Room {
 
 		//#region Interaction
 		if (isMyRoom) {
-			this.furnitureControl = new TransformControls(this.camera, this.renderer.domElement);
+			this.furnitureControl = new TransformControls(this.camera, this.canvas);
 			this.scene.add(this.furnitureControl);
 
 			// Hover highlight
-			this.renderer.domElement.onmousemove = this.onmousemove;
+			this.canvas.onmousemove = this.onmousemove;
 
 			// Click
-			this.renderer.domElement.onmousedown = this.onmousedown;
+			this.canvas.onmousedown = this.onmousedown;
 		}
 		//#endregion
 
@@ -300,7 +311,8 @@ export class Room {
 
 	@autobind
 	private renderWithoutPostFXs() {
-		requestAnimationFrame(this.renderWithoutPostFXs);
+		this.renderFrameRequestId =
+			window.requestAnimationFrame(this.renderWithoutPostFXs);
 
 		// Update animations
 		const clock = this.clock.getDelta();
@@ -314,7 +326,8 @@ export class Room {
 
 	@autobind
 	private renderWithPostFXs() {
-		requestAnimationFrame(this.renderWithPostFXs);
+		this.renderFrameRequestId =
+			window.requestAnimationFrame(this.renderWithPostFXs);
 
 		// Update animations
 		const clock = this.clock.getDelta();
@@ -329,7 +342,8 @@ export class Room {
 
 	@autobind
 	private loadRoom() {
-		new GLTFLoader().load(`/assets/room/rooms/${this.roomInfo.roomType}/${this.roomInfo.roomType}.glb`, gltf => {
+		const type = this.roomInfo.roomType;
+		new GLTFLoader().load(`/assets/room/rooms/${type}/${type}.glb`, gltf => {
 			gltf.scene.traverse(child => {
 				if (!(child instanceof THREE.Mesh)) return;
 
@@ -388,17 +402,13 @@ export class Room {
 					if (!(child instanceof THREE.Mesh)) return;
 					child.castShadow = this.enableShadow;
 					child.receiveShadow = this.enableShadow;
-					child.material = new THREE.MeshLambertMaterial({
-						color: (child.material as THREE.MeshStandardMaterial).color,
-						map: (child.material as THREE.MeshStandardMaterial).map,
-						name: (child.material as THREE.MeshStandardMaterial).name,
-					});
+					(child.material as THREE.MeshStandardMaterial).metalness = 0;
 
 					// 異方性フィルタリング
-					if ((child.material as THREE.MeshLambertMaterial).map && this.graphicsQuality !== 'cheep') {
-						(child.material as THREE.MeshLambertMaterial).map.minFilter = THREE.LinearMipMapLinearFilter;
-						(child.material as THREE.MeshLambertMaterial).map.magFilter = THREE.LinearMipMapLinearFilter;
-						(child.material as THREE.MeshLambertMaterial).map.anisotropy = 8;
+					if ((child.material as THREE.MeshStandardMaterial).map && this.graphicsQuality !== 'cheep') {
+						(child.material as THREE.MeshStandardMaterial).map.minFilter = THREE.LinearMipMapLinearFilter;
+						(child.material as THREE.MeshStandardMaterial).map.magFilter = THREE.LinearMipMapLinearFilter;
+						(child.material as THREE.MeshStandardMaterial).map.anisotropy = 8;
 					}
 				});
 
@@ -419,37 +429,46 @@ export class Room {
 	private applyCarpetColor() {
 		this.roomObj.traverse(child => {
 			if (!(child instanceof THREE.Mesh)) return;
-			if (child.material && (child.material as THREE.MeshStandardMaterial).name && (child.material as THREE.MeshStandardMaterial).name === 'Carpet') {
-				(child.material as THREE.MeshStandardMaterial).color.setHex(parseInt(this.roomInfo.carpetColor.substr(1), 16));
+			if (child.material &&
+				(child.material as THREE.MeshStandardMaterial).name &&
+				(child.material as THREE.MeshStandardMaterial).name === 'Carpet'
+			) {
+				const colorHex = parseInt(this.roomInfo.carpetColor.substr(1), 16);
+				(child.material as THREE.MeshStandardMaterial).color.setHex(colorHex);
 			}
 		});
 	}
 
 	@autobind
-	public applyCustomColor(model: THREE.Object3D) {
+	private applyCustomColor(model: THREE.Object3D) {
 		const furniture = this.furnitures.find(furniture => furniture.id === model.name);
 		const def = furnitureDefs.find(d => d.id === furniture.type);
 		if (def.color == null) return;
 		model.traverse(child => {
 			if (!(child instanceof THREE.Mesh)) return;
 			for (const t of Object.keys(def.color)) {
-				if (!child.material || !(child.material as THREE.MeshStandardMaterial).name || (child.material as THREE.MeshStandardMaterial).name !== t) continue;
+				if (!child.material ||
+					!(child.material as THREE.MeshStandardMaterial).name ||
+					(child.material as THREE.MeshStandardMaterial).name !== t
+				) continue;
 
 				const prop = def.color[t];
 				const val = furniture.props ? furniture.props[prop] : undefined;
 
 				if (val == null) continue;
 
-				(child.material as THREE.MeshStandardMaterial).color.setHex(parseInt(val.substr(1), 16));
+				const colorHex = parseInt(val.substr(1), 16);
+				(child.material as THREE.MeshStandardMaterial).color.setHex(colorHex);
 			}
 		});
 	}
 
 	@autobind
-	public applyCustomTexture(model: THREE.Object3D) {
+	private applyCustomTexture(model: THREE.Object3D) {
 		const furniture = this.furnitures.find(furniture => furniture.id === model.name);
 		const def = furnitureDefs.find(d => d.id === furniture.type);
 		if (def.texture == null) return;
+
 		model.traverse(child => {
 			if (!(child instanceof THREE.Mesh)) return;
 			for (const t of Object.keys(def.texture)) {
@@ -476,7 +495,9 @@ export class Room {
 					const uvInfo = def.texture[t].uv;
 
 					const ctx = canvas.getContext('2d');
-					ctx.drawImage(img, 0, 0, img.width, img.height, uvInfo.x, uvInfo.y, uvInfo.width, uvInfo.height);
+					ctx.drawImage(img,
+						0, 0, img.width, img.height,
+						uvInfo.x, uvInfo.y, uvInfo.width, uvInfo.height);
 
 					const texture = new THREE.Texture(canvas);
 					texture.wrapS = THREE.RepeatWrapping;
@@ -498,8 +519,8 @@ export class Room {
 		if (this.isTransformMode) return;
 
 		const rect = (ev.target as HTMLElement).getBoundingClientRect();
-		const x = (((ev.clientX * window.devicePixelRatio) - rect.left) / this.renderer.domElement.width) * 2 - 1;
-		const y = -(((ev.clientY * window.devicePixelRatio) - rect.top) / this.renderer.domElement.height) * 2 + 1;
+		const x = (((ev.clientX * window.devicePixelRatio) - rect.left) / this.canvas.width) * 2 - 1;
+		const y = -(((ev.clientY * window.devicePixelRatio) - rect.top) / this.canvas.height) * 2 + 1;
 		const pos = new THREE.Vector2(x, y);
 
 		this.camera.updateMatrixWorld();
@@ -520,24 +541,23 @@ export class Room {
 
 		if (intersects.length > 0) {
 			const intersected = this.getRoot(intersects[0].object);
-			if (!this.isSelectedObject(intersected)) {
-				intersected.traverse(child => {
-					if (child instanceof THREE.Mesh) {
-						(child.material as THREE.MeshStandardMaterial).emissive.setHex(0x191919);
-					}
-				});
-			}
+			if (this.isSelectedObject(intersected)) return;
+			intersected.traverse(child => {
+				if (child instanceof THREE.Mesh) {
+					(child.material as THREE.MeshStandardMaterial).emissive.setHex(0x191919);
+				}
+			});
 		}
 	}
 
 	@autobind
 	private onmousedown(ev: MouseEvent) {
 		if (this.isTransformMode) return;
-		if (ev.target !== this.renderer.domElement || ev.button !== 0) return;
+		if (ev.target !== this.canvas || ev.button !== 0) return;
 
 		const rect = (ev.target as HTMLElement).getBoundingClientRect();
-		const x = (((ev.clientX * window.devicePixelRatio) - rect.left) / this.renderer.domElement.width) * 2 - 1;
-		const y = -(((ev.clientY * window.devicePixelRatio) - rect.top) / this.renderer.domElement.height) * 2 + 1;
+		const x = (((ev.clientX * window.devicePixelRatio) - rect.left) / this.canvas.width) * 2 - 1;
+		const y = -(((ev.clientY * window.devicePixelRatio) - rect.top) / this.canvas.height) * 2 + 1;
 		const pos = new THREE.Vector2(x, y);
 
 		this.camera.updateMatrixWorld();
@@ -598,6 +618,10 @@ export class Room {
 		});
 	}
 
+	/**
+	 * 家具の移動/回転モードにします
+	 * @param type 移動か回転か
+	 */
 	@autobind
 	public enterTransformMode(type: 'translate' | 'rotate') {
 		this.isTransformMode = true;
@@ -605,12 +629,20 @@ export class Room {
 		this.furnitureControl.attach(this.selectedObject);
 	}
 
+	/**
+	 * 家具の移動/回転モードを終了します
+	 */
 	@autobind
 	public exitTransformMode() {
 		this.isTransformMode = false;
 		this.furnitureControl.detach();
 	}
 
+	/**
+	 * 家具プロパティを更新します
+	 * @param key プロパティ名
+	 * @param value 値
+	 */
 	@autobind
 	public updateProp(key: string, value: any) {
 		const furniture = this.furnitures.find(furniture => furniture.id === this.selectedObject.name);
@@ -620,6 +652,10 @@ export class Room {
 		this.applyCustomTexture(this.selectedObject);
 	}
 
+	/**
+	 * 部屋に家具を追加します
+	 * @param type 家具の種類
+	 */
 	@autobind
 	public addFurniture(type: string) {
 		const furniture = {
@@ -645,6 +681,9 @@ export class Room {
 		});
 	}
 
+	/**
+	 * 現在選択されている家具を部屋から削除します
+	 */
 	@autobind
 	public removeFurniture() {
 		this.exitTransformMode();
@@ -656,12 +695,35 @@ export class Room {
 		this.onChangeSelect(null);
 	}
 
+	/**
+	 * 全ての家具を部屋から削除します
+	 */
+	@autobind
+	public removeAllFurnitures() {
+		this.exitTransformMode();
+		for (const obj of this.objects) {
+			this.scene.remove(obj);
+		}
+		this.objects = [];
+		this.furnitures = [];
+		this.selectedObject = null;
+		this.onChangeSelect(null);
+	}
+
+	/**
+	 * 部屋の床の色を変更します
+	 * @param color 色
+	 */
 	@autobind
 	public updateCarpetColor(color: string) {
 		this.roomInfo.carpetColor = color;
 		this.applyCarpetColor();
 	}
 
+	/**
+	 * 部屋の種類を変更します
+	 * @param type 種類
+	 */
 	@autobind
 	public changeRoomType(type: string) {
 		this.roomInfo.roomType = type;
@@ -669,6 +731,9 @@ export class Room {
 		this.loadRoom();
 	}
 
+	/**
+	 * 部屋データを取得します
+	 */
 	@autobind
 	public getRoomInfo() {
 		for (const obj of this.objects) {
@@ -684,6 +749,9 @@ export class Room {
 		return this.roomInfo;
 	}
 
+	/**
+	 * 選択されている家具を取得します
+	 */
 	@autobind
 	public getSelectedObject() {
 		return this.selectedObject;
@@ -692,5 +760,14 @@ export class Room {
 	@autobind
 	public findFurnitureById(id: string) {
 		return this.furnitures.find(furniture => furniture.id === id);
+	}
+
+	/**
+	 * レンダリングを終了します
+	 */
+	@autobind
+	public destroy() {
+		// Stop render loop
+		window.cancelAnimationFrame(this.renderFrameRequestId);
 	}
 }
