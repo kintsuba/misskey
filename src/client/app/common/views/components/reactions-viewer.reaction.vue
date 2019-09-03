@@ -101,9 +101,11 @@ export default Vue.extend({
 		openDetails() {
 			if (this.$root.isMobile) return;
 			this.$root.api('notes/reactions', {
-				noteId: this.note.id
+				noteId: this.note.id,
+				type: this.reaction,
+				limit: 11
 			}).then((reactions: any[]) => {
-				const users = reactions.filter(x => x.type === this.reaction)
+				const users = reactions
 					.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
 					.map(x => x.user);
 
@@ -112,6 +114,7 @@ export default Vue.extend({
 				this.details = this.$root.new(XDetails, {
 					reaction: this.reaction,
 					users,
+					count: this.count,
 					source: this.$refs.reaction
 				});
 			});
