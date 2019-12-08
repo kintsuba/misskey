@@ -47,7 +47,7 @@ export default async function(user: User, note: Note, quiet = false) {
 
 			const content = renderActivity(renote
 				? renderUndo(renderAnnounce(renote.uri || `${config.url}/notes/${renote.id}`, note), user)
-				: renderDelete(renderTombstone(`${config.url}/notes/${note.id}`), user));
+				: renderDelete(renderTombstone(`${config.url}/notes/${note.id}`, 'Note'), user));
 
 			deliverToFollowers(user, content);
 		}

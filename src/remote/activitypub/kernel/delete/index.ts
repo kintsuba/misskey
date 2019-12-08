@@ -1,7 +1,6 @@
-import Resolver from '../../resolver';
 import deleteNote from './note';
 import { IRemoteUser } from '../../../../models/entities/user';
-import { IDelete, getApId, validPost } from '../../type';
+import { IDelete, getApId, isNote, isTombstone } from '../../type';
 import { apLogger } from '../../logger';
 
 /**
@@ -12,15 +11,24 @@ export default async (actor: IRemoteUser, activity: IDelete): Promise<void> => {
 		throw new Error('invalid actor');
 	}
 
-	const resolver = new Resolver();
+	let formarType: string | undefined;
 
-	const object = await resolver.resolve(activity.object);
+	if (typeof activity.object === 'string') {
+		formarType = undefined;
+	} else if (isNote(activity.object)) {
+		formarType = 'Note';
+	} else if (isTombstone(activity.object)) {
+		formarType = activity.object.formerType;
+	} else {
+		apLogger.warn(`Unknown object type in Delete activity: ${activity.type}`);
+		return;
+	}
 
-	const uri = getApId(object);
+	const uri = getApId(activity.object);
 
-	if (validPost.includes(object.type) || object.type === 'Tombstone') {
+	if (formarType === 'Note' || formarType == null) {
 		deleteNote(actor, uri);
 	} else {
-		apLogger.warn(`Unknown type: ${object.type}`);
+		apLogger.warn(`Unsupported target object type in Delete activity: ${formarType}`);
 	}
 };

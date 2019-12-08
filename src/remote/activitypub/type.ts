@@ -71,6 +71,9 @@ export interface IOrderedCollection extends IObject {
 
 export const validPost = ['Note', 'Question', 'Article', 'Audio', 'Document', 'Image', 'Page', 'Video'];
 
+export const isNote = (object: IObject): object is INote =>
+	validPost.includes(object.type);
+
 export interface INote extends IObject {
 	type: 'Note' | 'Question' | 'Article' | 'Audio' | 'Document' | 'Image' | 'Page' | 'Video';
 	_misskey_content?: string;
@@ -119,6 +122,12 @@ export interface IPerson extends IObject {
 	};
 }
 
+export interface ITombstone extends IObject {
+	type: 'Tombstone';
+	formerType?: string;
+	deleted?: Date;
+}
+
 export const isCollection = (object: IObject): object is ICollection =>
 	object.type === 'Collection';
 
@@ -127,6 +136,9 @@ export const isOrderedCollection = (object: IObject): object is IOrderedCollecti
 
 export const isCollectionOrOrderedCollection = (object: IObject): object is ICollection | IOrderedCollection =>
 	isCollection(object) || isOrderedCollection(object);
+
+export const isTombstone = (object: IObject): object is ITombstone =>
+	object.type === 'Tombstone';
 
 export interface ICreate extends IActivity {
 	type: 'Create';
