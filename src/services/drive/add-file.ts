@@ -289,7 +289,7 @@ async function deleteOldFile(user: IRemoteUser) {
  * @return Created drive file
  */
 export async function addFile(
-	user: IUser,
+	user: IUser | null,
 	path: string,
 	name: string = null,
 	comment: string = null,
@@ -306,7 +306,7 @@ export async function addFile(
 	// detect name
 	const detectedName = name || (info.type.ext ? `untitled.${info.type.ext}` : 'untitled');
 
-	if (!force) {
+	if (user && !force) {
 		// Check if there is a file with the same hash
 		const much = await DriveFile.findOne({
 			md5: info.md5,
@@ -321,7 +321,7 @@ export async function addFile(
 	}
 
 	//#region Check drive usage
-	if (!isLink) {
+	if (user && !isLink) {
 		const usage = await DriveFile
 			.aggregate([{
 				$match: {
@@ -369,7 +369,7 @@ export async function addFile(
 
 		const driveFolder = await DriveFolder.findOne({
 			_id: folderId,
-			userId: user._id
+			userId: user ? user._id : null
 		});
 
 		if (driveFolder == null) throw 'folder-not-found';
@@ -391,16 +391,16 @@ export async function addFile(
 	const folder = await fetchFolder();
 
 	const metadata = {
-		userId: user._id,
+		userId: user ? user._id : null,
 		_user: {
-			host: user.host
+			host: user ? user.host : null
 		},
 		folderId: folder !== null ? folder._id : null,
 		comment: comment,
 		properties: properties,
 		withoutChunks: isLink,
 		isRemote: isLink,
-		isSensitive: (isLocalUser(user) && user.settings.alwaysMarkNsfw) || sensitive
+		isSensitive: (user && isLocalUser(user) && user.settings.alwaysMarkNsfw) || sensitive
 	} as IMetadata;
 
 	if (url !== null) {
@@ -434,7 +434,7 @@ export async function addFile(
 
 				driveFile = await DriveFile.findOne({
 					'metadata.uri': metadata.uri,
-					'metadata.userId': user._id
+					'metadata.userId': user ? user._id : null
 				});
 			} else {
 				logger.error(e);
@@ -448,11 +448,13 @@ export async function addFile(
 
 	logger.succ(`drive file has been created ${driveFile._id}`);
 
-	pack(driveFile, { self: true }).then(packedFile => {
-		// Publish driveFileCreated event
-		publishMainStream(user._id, 'driveFileCreated', packedFile);
-		publishDriveStream(user._id, 'fileCreated', packedFile);
-	});
+	if (user) {
+		pack(driveFile, { self: true }).then(packedFile => {
+			// Publish driveFileCreated event
+			publishMainStream(user._id, 'driveFileCreated', packedFile);
+			publishDriveStream(user._id, 'fileCreated', packedFile);
+		});
+	}
 
 	// 統計を更新
 	driveChart.update(driveFile, true);
