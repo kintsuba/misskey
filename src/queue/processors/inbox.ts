@@ -63,7 +63,17 @@ export default async (job: Bull.Job): Promise<void> => {
 		key = _key;
 	} else {
 		// 未登録ユーザーの場合はリモート解決
-		user = await resolvePerson(activity.actor) as IRemoteUser;
+		try {
+			user = await resolvePerson(activity.actor) as IRemoteUser;
+		} catch (e) {
+			// 対象が4xxならスキップ (おそらくローカルでもリモートでも削除済みユーザー)
+			if (e.statusCode >= 400 && e.statusCode < 500) {
+				logger.warn(`skip: Ignored actor ${activity.actor} - ${e.statusCode}`);
+				return;
+			}
+			throw new Error(`Error in actor ${activity.actor} - ${e.statusCode || e}`);
+		}
+
 		if (user == null) {
 			throw new Error('failed to resolve user');
 		}
