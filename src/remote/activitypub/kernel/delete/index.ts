@@ -41,7 +41,7 @@ export default async (actor: IRemoteUser, activity: IDelete): Promise<void> => {
 	if (validPost.includes(formarType)) {
 		return await deleteNote(actor, uri);
 	} else if (validActor.includes(formarType)) {
-		apLogger.debug(`Delete Actor is not implanted`);
+		apLogger.warn(`Delete Actor is not implanted`);
 		return;
 	} else {
 		apLogger.warn(`Unknown type: ${formarType}`);
