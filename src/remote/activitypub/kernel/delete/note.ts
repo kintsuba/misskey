@@ -9,6 +9,7 @@ const logger = apLogger;
 export default async function(actor: IRemoteUser, uri: string): Promise<void> {
 	logger.info(`Deleting the Note: ${uri}`);
 
+	// Createは時間がかかることがあり Create, Deleteが連続して来ると消えない可能性があるので Createを待機する
 	const unlock = await getApLock(uri);
 
 	try {
