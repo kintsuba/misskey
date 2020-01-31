@@ -66,7 +66,7 @@ export default async (job: Bull.Job): Promise<void> => {
 		try {
 			user = await resolvePerson(activity.actor) as IRemoteUser;
 		} catch (e) {
-			// 対象が4xxならスキップ (おそらくローカルでもリモートでも削除済みユーザー)
+			// 対象が4xxならスキップ
 			if (e.statusCode >= 400 && e.statusCode < 500) {
 				logger.warn(`skip: Ignored actor ${activity.actor} - ${e.statusCode}`);
 				return;
