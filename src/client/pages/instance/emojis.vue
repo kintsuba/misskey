@@ -115,7 +115,6 @@ export default Vue.extend({
 			
 			const data = new FormData();
 			data.append('file', file);
-			data.append('name', this.name);
 			data.append('i', this.$store.state.i.token);
 
 			const dialog = this.$root.dialog({
@@ -126,20 +125,26 @@ export default Vue.extend({
 				cancelableByBgClick: false
 			});
 
-			fetch(apiUrl + '/admin/emoji/add', {
+			fetch(apiUrl + '/admin/drive/create', {
 				method: 'POST',
 				body: data
 			})
 			.then(response => response.json())
-			.then(f => {
-				this.$refs.emojis.reload();
-				this.$root.dialog({
-					type: 'success',
-					iconOnly: true, autoClose: true
+			.then((f: any) => {
+				this.$root.api('admin/emoji/add', {
+					name: this.name,
+					url: f.url
+				})
+				.then(() => {
+					this.$refs.emojis.reload();
+					this.$root.dialog({
+						type: 'success',
+						iconOnly: true, autoClose: true
+					});
+				})
+				.finally(() => {
+					dialog.close();
 				});
-			})
-			.finally(() => {
-				dialog.close();
 			});
 		},
 
