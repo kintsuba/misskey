@@ -165,6 +165,7 @@ export const isImage = (object: IObject): object is IApImage =>
 export interface IApPropertyValue extends IObject {
 	type: 'PropertyValue';
 	identifier: IApPropertyValue;
+	name: string;
 	value: string;
 }
 
@@ -176,6 +177,7 @@ export const isPropertyValue = (object: IObject): object is IApPropertyValue =>
 
 export interface IApMention extends IObject {
 	type: 'Mention';
+	href: string;
 }
 
 export const isMention = (object: IObject): object is IApMention =>
@@ -184,12 +186,12 @@ export const isMention = (object: IObject): object is IApMention =>
 
 export interface IApHashtag extends IObject {
 	type: 'Hashtag';
+	name: string;
 }
 
 export const isHashtag = (object: IObject): object is IApHashtag =>
 	object.type === 'Hashtag' &&
 	typeof object.name === 'string';
-
 
 export interface IApPerson extends IObject {
 	type: 'Person' | 'Service' | 'Organization' | 'Group';
@@ -213,7 +215,6 @@ export const isActor = (object: IObject): object is IApPerson =>
 
 export interface IApEmoji extends IObject {
 	type: 'Emoji';
-	name: string;
 	updated: Date;
 }
 
