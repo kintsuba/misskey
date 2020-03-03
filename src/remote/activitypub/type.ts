@@ -174,6 +174,14 @@ export const isPropertyValue = (object: IObject): object is IApPropertyValue =>
 	typeof object.name === 'string' &&
 	typeof (object as any).value === 'string';
 
+export interface IApMention extends IObject {
+	type: 'Mention';
+}
+
+export const isMention = (object: IObject): object is IApMention =>
+	object.type === 'Mention' &&
+	typeof object.href === 'string';
+
 export interface IApHashtag extends IObject {
 	type: 'Hashtag';
 }
@@ -182,13 +190,6 @@ export const isHashtag = (object: IObject): object is IApHashtag =>
 	object.type === 'Hashtag' &&
 	typeof object.name === 'string';
 
-export interface IApMention extends IObject {
-	type: 'Mention';
-}
-
-export const isMention = (object: IObject): object is IApHashtag =>
-	object.type === 'Mention' &&
-	typeof object.href === 'string';
 
 export interface IApPerson extends IObject {
 	type: 'Person' | 'Service' | 'Organization' | 'Group';
