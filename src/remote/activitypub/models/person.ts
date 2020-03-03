@@ -182,11 +182,13 @@ export async function createPerson(uri: string, resolver?: Resolver): Promise<IU
 	} catch (e) {
 		// duplicate key error
 		if (e.code === 11000) {
-			throw new Error(`Person already registered: ${person.preferredUsername}@${host} (${uri})`);
+			user = await User.findOne({
+				uri: person.id
+			});
+		} else {
+			logger.error(e);
+			throw e;
 		}
-
-		logger.error(e);
-		throw e;
 	}
 
 	// Register host
