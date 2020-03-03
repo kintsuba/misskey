@@ -27,6 +27,7 @@ export interface IObject {
 	sensitive?: boolean;
 	movedTo?: ApObject;
 	alsoKnownAs?: ApObject;
+	href?: string;
 }
 
 /**
@@ -180,6 +181,14 @@ export interface IApHashtag extends IObject {
 export const isHashtag = (object: IObject): object is IApHashtag =>
 	object.type === 'Hashtag' &&
 	typeof object.name === 'string';
+
+export interface IApMention extends IObject {
+	type: 'Mention';
+}
+
+export const isMention = (object: IObject): object is IApHashtag =>
+	object.type === 'Mention' &&
+	typeof object.href === 'string';
 
 export interface IApPerson extends IObject {
 	type: 'Person' | 'Service' | 'Organization' | 'Group';
