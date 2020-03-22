@@ -12,6 +12,7 @@ import procesObjectStorage from './processors/object-storage';
 import { queueLogger } from './logger';
 import { DriveFile } from '../models/entities/drive-file';
 import { getJobInfo } from './get-job-info';
+import { IActivity } from '../remote/activitypub/type';
 
 function initializeQueue<T>(name: string, limitPerSec = -1) {
 	return new Queue<T>(name, {
@@ -42,9 +43,6 @@ export const inboxQueue = initializeQueue<InboxJobData>('inbox', config.inboxJob
 export const dbQueue = initializeQueue<any>('db');
 export const objectStorageQueue = initializeQueue<any>('objectStorage');
 //#region job data types
-/**
- * Data type for deliver job
- */
 export type DeliverJobData = {
 	/** Actor */
 	user: ILocalUser;
@@ -54,13 +52,8 @@ export type DeliverJobData = {
 	to: string;
 };
 
-/**
- * Data type for inbox job
- */
 export type InboxJobData = {
-	/** Activity */
-	activity: any,
-	/** Signature */
+	activity: IActivity,
 	signature: httpSignature.IParsedSignature
 };
 //#endregion
@@ -123,9 +116,9 @@ export function deliver(user: ILocalUser, content: any, to: any) {
 	});
 }
 
-export function inbox(activity: any, signature: httpSignature.IParsedSignature) {
+export function inbox(activity: IActivity, signature: httpSignature.IParsedSignature) {
 	const data = {
-		activity: activity,
+		activity,
 		signature
 	};
 

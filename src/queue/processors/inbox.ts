@@ -10,7 +10,7 @@ import { instanceChart } from '../../services/chart';
 import { UserPublickey } from '../../models/entities/user-publickey';
 import { fetchMeta } from '../../misc/fetch-meta';
 import { toPuny } from '../../misc/convert-host';
-import { validActor, IActivity } from '../../remote/activitypub/type';
+import { validActor, getApId } from '../../remote/activitypub/type';
 import { ensure } from '../../prelude/ensure';
 import { fetchNodeinfo } from '../../services/fetch-nodeinfo';
 import { InboxJobData } from '..';
@@ -19,8 +19,8 @@ const logger = new Logger('inbox');
 
 // ユーザーのinboxにアクティビティが届いた時の処理
 export default async (job: Bull.Job<InboxJobData>): Promise<void> => {
-	const signature = job.data.signature as httpSignature.IParsedSignature;
-	const activity = job.data.activity as IActivity;
+	const signature = job.data.signature;
+	const activity = job.data.activity;
 
 	//#region Log
 	const info = Object.assign({}, activity);
@@ -64,7 +64,7 @@ export default async (job: Bull.Job<InboxJobData>): Promise<void> => {
 		key = _key;
 	} else {
 		// 未登録ユーザーの場合はリモート解決
-		user = await resolvePerson(activity.actor) as IRemoteUser;
+		user = await resolvePerson(getApId(activity.actor)) as IRemoteUser;
 		if (user == null) {
 			throw new Error('failed to resolve user');
 		}
@@ -74,11 +74,11 @@ export default async (job: Bull.Job<InboxJobData>): Promise<void> => {
 
 	// Update Person activityの場合は、ここで署名検証/更新処理まで実施して終了
 	if (activity.type === 'Update') {
-		if (activity.object && validActor.includes(activity.object.type)) {
+		if (typeof activity.object === 'object' && validActor.includes(activity.object.type)) {
 			if (!httpSignature.verifySignature(signature, key.keyPem)) {
 				logger.warn('Update activity received, but signature verification failed.');
 			} else {
-				updatePerson(activity.actor, null, activity.object);
+				updatePerson(getApId(activity.actor), null, activity.object);
 			}
 			return;
 		}
