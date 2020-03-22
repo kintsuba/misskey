@@ -10,16 +10,17 @@ import { instanceChart } from '../../services/chart';
 import { UserPublickey } from '../../models/entities/user-publickey';
 import { fetchMeta } from '../../misc/fetch-meta';
 import { toPuny } from '../../misc/convert-host';
-import { validActor } from '../../remote/activitypub/type';
+import { validActor, IActivity } from '../../remote/activitypub/type';
 import { ensure } from '../../prelude/ensure';
 import { fetchNodeinfo } from '../../services/fetch-nodeinfo';
+import { InboxJobData } from '..';
 
 const logger = new Logger('inbox');
 
 // ユーザーのinboxにアクティビティが届いた時の処理
-export default async (job: Bull.Job): Promise<void> => {
-	const signature = job.data.signature;
-	const activity = job.data.activity;
+export default async (job: Bull.Job<InboxJobData>): Promise<void> => {
+	const signature = job.data.signature as httpSignature.IParsedSignature;
+	const activity = job.data.activity as IActivity;
 
 	//#region Log
 	const info = Object.assign({}, activity);

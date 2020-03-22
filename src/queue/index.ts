@@ -13,8 +13,8 @@ import { queueLogger } from './logger';
 import { DriveFile } from '../models/entities/drive-file';
 import { getJobInfo } from './get-job-info';
 
-function initializeQueue(name: string, limitPerSec = -1) {
-	return new Queue(name, {
+function initializeQueue<T>(name: string, limitPerSec = -1) {
+	return new Queue<T>(name, {
 		redis: {
 			port: config.redis.port,
 			host: config.redis.host,
@@ -37,10 +37,34 @@ function renderError(e: Error): any {
 	};
 }
 
-export const deliverQueue = initializeQueue('deliver', config.deliverJobPerSec || 128);
-export const inboxQueue = initializeQueue('inbox', config.inboxJobPerSec || 16);
-export const dbQueue = initializeQueue('db');
-export const objectStorageQueue = initializeQueue('objectStorage');
+export const deliverQueue = initializeQueue<DeliverJobData>('deliver', config.deliverJobPerSec || 128);
+export const inboxQueue = initializeQueue<InboxJobData>('inbox', config.inboxJobPerSec || 16);
+export const dbQueue = initializeQueue<any>('db');
+export const objectStorageQueue = initializeQueue<any>('objectStorage');
+//#region job data types
+/**
+ * Data type for deliver job
+ */
+export type DeliverJobData = {
+	/** Actor */
+	user: ILocalUser;
+	/** Activity */
+	content: any;
+	/** inbox URL to deliver */
+	to: string;
+};
+
+/**
+ * Data type for inbox job
+ */
+export type InboxJobData = {
+	/** Activity */
+	activity: any,
+	/** Signature */
+	signature: httpSignature.IParsedSignature
+};
+//#endregion
+
 
 const deliverLogger = queueLogger.createSubLogger('deliver');
 const inboxLogger = queueLogger.createSubLogger('inbox');

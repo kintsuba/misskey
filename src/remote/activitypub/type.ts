@@ -56,6 +56,7 @@ export interface IActivity extends IObject {
 	actor: IObject | string;
 	object: IObject | string;
 	target?: IObject | string;
+	signature?: {};
 }
 
 export interface ICollection extends IObject {
