@@ -115,6 +115,10 @@ common:
     "write:mutes": "write:mutes (未使用)"
     "note-read": "note-read (未使用)"
     "vote-read": "vote-read (未使用)"
+    "_unspecified_": "追加権限不要 (permissions指定は不要です、アプリ認証をするだけでアクセス出来ます。)"
+    "_admin_": "管理者権限が必要 (permissions指定は不要ですが、管理者アカウントである必要があります。)"
+    "_moderator_": "管理者またはモデレーター権限が必要 (permissions指定は不要ですが、管理者またはモデレーターアカウントである必要があります。)"
+    "_secure_": "サードパーティーアクセス不可"
 
   empty-timeline-info:
     follow-users-to-make-your-timeline: "ユーザーをフォローすると投稿がタイムラインに表示されます。"

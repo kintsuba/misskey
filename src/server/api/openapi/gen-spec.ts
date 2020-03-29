@@ -110,9 +110,26 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 
 		let desc = (endpoint.meta.desc ? endpoint.meta.desc[lang] : 'No description provided.') + '\n\n';
 		desc += `**Credential required**: *${endpoint.meta.requireCredential ? 'Yes' : 'No'}*`;
+
 		if (endpoint.meta.kind) {
 			const kind = endpoint.meta.kind;
 			desc += ` / **Permission**: *${kind}*`;
+		}
+
+		if (endpoint.meta.requireAdmin) {
+			desc += ' / Require admin';
+		}
+
+		if (endpoint.meta.requireModerator) {
+			desc += ' / Require moderator';
+		}
+
+		if (endpoint.meta.allowGet) {
+			desc += ' / GET Supported';
+		}
+
+		if (endpoint.meta.secure) {
+			desc += ' / Secure';
 		}
 
 		const info = {
@@ -133,7 +150,15 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 			} : {}),
 			requestBody: {
 				required: true,
-				content: {
+				content: endpoint.meta.requireFile ? {
+					'multipart/form-data': {
+						schema: {
+							type: 'object',
+							...(required.length > 0 ? { required } : {}),
+							properties: endpoint.meta.params ? genProps(porops) : {}
+						}
+					}
+				} : {
 					'application/json': {
 						schema: {
 							type: 'object',
