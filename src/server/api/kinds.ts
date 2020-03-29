@@ -1,0 +1,18 @@
+export const kinds = [
+	'account-read',
+	'account-write',
+	'account/read',
+	'account/write',
+	'drive-read',
+	'drive-write',
+	'favorites-read',
+	'favorite-write',
+	'following-read',
+	'following-write',
+	'messaging-read',
+	'messaging-write',
+	'note-write',
+	'notification-write',
+	'reaction-write',
+	'vote-write',
+];
