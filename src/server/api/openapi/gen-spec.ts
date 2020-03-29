@@ -106,6 +106,12 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 
 		const required = endpoint.meta.params ? Object.entries(endpoint.meta.params).filter(([k, v]) => !v.validator.isOptional).map(([k, v]) => k) : [];
 
+		const schema = {
+			type: 'object',
+			...(required.length > 0 ? { required } : {}),
+			properties: endpoint.meta.params ? genProps(porops) : {}
+		};
+
 		const resSchema = endpoint.meta.res ? convertSchemaToOpenApiSchema(endpoint.meta.res) : {};
 
 		let desc = (endpoint.meta.desc ? endpoint.meta.desc[lang] : 'No description provided.') + '\n\n';
@@ -151,21 +157,9 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 			requestBody: {
 				required: true,
 				content: endpoint.meta.requireFile ? {
-					'multipart/form-data': {
-						schema: {
-							type: 'object',
-							...(required.length > 0 ? { required } : {}),
-							properties: endpoint.meta.params ? genProps(porops) : {}
-						}
-					}
+					'multipart/form-data': { schema }
 				} : {
-					'application/json': {
-						schema: {
-							type: 'object',
-							...(required.length > 0 ? { required } : {}),
-							properties: endpoint.meta.params ? genProps(porops) : {}
-						}
-					}
+					'application/json': { schema }
 				}
 			},
 			responses: {
