@@ -10,7 +10,7 @@ APIを使い始めるには、まずアクセストークンを取得する必�
 基本的に、APIはリクエストにはアクセストークンが必要となります。
 あなたの作ろうとしているアプリケーションが、あなた専用のものなのか、それとも不特定多数の人に使ってもらうものなのかによって、アクセストークンの取得手順は異なります。
 
-あなた専用の場合: 自分のアカウントのアクセストークン を使用してください
+あなた専用の場合: 自分のアカウントのアクセストークン を使用してください  
 皆に使ってもらう場合: アプリケーションとしてアクセストークンを取得する を使用してください
 
 ## 自分のアカウントのアクセストークン (ネイティブトークン)
@@ -29,24 +29,28 @@ APIを使い始めるには、まずアクセストークンを取得する必�
 APIの1つですので、リクエストはPOST / リクエストボディはJSON / レスポンスボディもJSONです。
 
 リクエストJSON
-```
-name: string;   // アプリケーション名 (必須)
-description: string; // アプリケーションの説明 (必須)
-permission: string[], // 権限の一覧 (必須ですが要素数0でも有効です, 後述)
-callbackUrl?: string; // コールバックURL (オプション, ユーザー承認後にリダイレクトされるURL)
+```json5
+{
+  name: string;   // アプリケーション名 (必須)
+  description: string; // アプリケーションの説明 (必須)
+  permission: string[], // 権限の一覧 (必須ですが要素数0でも有効です, 後述)
+  callbackUrl?: string; // コールバックURL (オプション, ユーザー承認後にリダイレクトされるURL)
+}
 // なお各項目には一意制約はありません
 ```
 
 作成に成功すると作成されたアプリケーションの情報が返ってきます
 
 レスポンスJSON
-```
-id: string; // アプリケーションID (この後の認証フローでは使用しませんが、API `app/show` などに使用できます)
-name: string; // リクエストと同じ
-description: string; // リクエストと同じ
-callbackUrl?: string; // リクエストと同じ
-permission: string[]; // リクエストと同じ
-secret: string; // アプリケーションのシークレットキー (この後の認証フローで使用します)
+```json5
+{
+  id: string; // アプリケーションID (この後の認証フローでは使用しませんが、API `app/show` などに使用できます)
+  name: string; // リクエストと同じ
+  description: string; // リクエストと同じ
+  callbackUrl?: string; // リクエストと同じ
+  permission: string[]; // リクエストと同じ
+  secret: string; // アプリケーションのシークレットキー (この後の認証フローで使用します)
+}
 ```
 
 #### Step2 認証セッションを作成する
@@ -54,16 +58,20 @@ secret: string; // アプリケーションのシークレットキー (この�
 API `auth/session/generate` で認証セッションを作成します
 
 リクエストJSON
-```
-appSecret: // アプリケーションのシークレットキー (Step1の`secret`になります)
+```json5
+{
+  appSecret: string; // アプリケーションのシークレットキー (Step1の`secret`になります)
+}
 ```
 
 成功すると以下の情報が返ってきます
 
 レスポンスJSON
-```
-token: string; // セッションのトークン
-url: string;   // ユーザーに認証させるURL
+```json5
+{
+  token: string; // セッションのトークン
+  url: string;   // ユーザーに認証させるURL
+}
 ```
 
 #### Step3 ユーザーに承認してもらう
@@ -79,15 +87,19 @@ Step2の`url`にユーザーをアクセスさせてユーザーに承認して�
 API `auth/session/userkey` からユーザーキーを取得します
 
 リクエストJSON
-```
-appSecret: string; // アプリケーションのシークレットキー (Step1の`secret`になります)
-token: string; // セッションのトークン (Step2の`token`になります)
+```json5
+{
+  appSecret: string; // アプリケーションのシークレットキー (Step1の`secret`になります)
+  token: string; // セッションのトークン (Step2の`token`になります)
+}
 ```
 
 レスポンスJSON
-```
-accessToken: string; // ユーザーキー
-user: object; // ユーザーの情報
+```json5
+{
+  accessToken: string; // ユーザーキー
+  user: object; // ユーザーの情報
+}
 ```
 
 ### Step5 アクセストークンを生成する
@@ -109,8 +121,6 @@ APIリクエスト時のアクセストークン (`i`として付与するもの
 	// ：他のパラメーター
 }
 ```
-
-
 
 [APIリファレンス](/api-doc)
 
