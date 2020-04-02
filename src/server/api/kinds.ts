@@ -25,4 +25,8 @@ export const kinds = [
 	'read:page-likes',
 	'read:user-groups',
 	'write:user-groups',
+	'_unspecified_',
+//	'_admin_',
+//	'_moderator_',
+//	'_secure_',
 ];

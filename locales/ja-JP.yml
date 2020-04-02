@@ -573,6 +573,10 @@ _permissions:
   "write:page-likes": "ページのいいねを操作する"
   "read:user-groups": "ユーザーグループを見る"
   "write:user-groups": "ユーザーグループを操作する"
+  "_unspecified_": "追加の権限は不要"
+  "_admin_": "管理者権限が必要"
+  "_moderator_": "管理者またはモデレーター権限が必要"
+  "_secure_": "サードパーティーアクセス不可"
 
 _auth:
   shareAccess: "「{name}」がアカウントにアクセスすることを許可しますか？"
