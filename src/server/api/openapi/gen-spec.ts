@@ -13,7 +13,7 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 			version: 'v1',
 			title: 'Misskey API',
 			description: getDescription(lang),
-			'x-logo': { url: '/assets/api-doc.png' }
+			'x-logo': { url: 'https://raw.githubusercontent.com/syuilo/misskey/develop/assets/api-doc.png' }
 		},
 
 		externalDocs: {
