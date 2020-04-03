@@ -79,7 +79,7 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 		};
 	}
 
-	for (const endpoint of endpoints.filter(ep => !ep.meta.secure)) {
+	for (const endpoint of endpoints.filter(ep => !ep.meta.secure && !ep.meta.requireAdmin && !ep.meta.requireModerator && !ep.name.startsWith('admin/'))) {
 		const porops = {} as any;
 		const errors = {} as any;
 
@@ -165,63 +165,6 @@ export function genOpenapiSpec(lang = 'ja-JP') {
 								$ref: '#/components/schemas/Error'
 							},
 							examples: { ...errors, ...basicErrors['400'] }
-						}
-					}
-				},
-				'401': {
-					description: 'Authentication error',
-					content: {
-						'application/json': {
-							schema: {
-								$ref: '#/components/schemas/Error'
-							},
-							examples: basicErrors['401']
-						}
-					}
-				},
-				'403': {
-					description: 'Forbiddon error',
-					content: {
-						'application/json': {
-							schema: {
-								$ref: '#/components/schemas/Error'
-							},
-							examples: basicErrors['403']
-						}
-					}
-				},
-				'418': {
-					description: 'I\'m Ai',
-					content: {
-						'application/json': {
-							schema: {
-								$ref: '#/components/schemas/Error'
-							},
-							examples: basicErrors['418']
-						}
-					}
-				},
-				...(endpoint.meta.limit ? {
-					'429': {
-						description: 'To many requests',
-						content: {
-							'application/json': {
-								schema: {
-									$ref: '#/components/schemas/Error'
-								},
-								examples: basicErrors['429']
-							}
-						}
-					}
-				} : {}),
-				'500': {
-					description: 'Internal server error',
-					content: {
-						'application/json': {
-							schema: {
-								$ref: '#/components/schemas/Error'
-							},
-							examples: basicErrors['500']
 						}
 					}
 				},
