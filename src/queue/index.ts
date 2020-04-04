@@ -1,5 +1,5 @@
 import { ObjectID } from 'mongodb';
-import { Queue, Worker } from 'bullmq';
+import { Queue, Worker, QueueScheduler } from 'bullmq';
 import * as httpSignature from 'http-signature';
 import * as IORedis from 'ioredis';
 
@@ -24,18 +24,34 @@ const connection = new IORedis({
 
 const prefix = config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue';
 
-function initializeQueue<T>(name: string, limitPerSec = -1) {
+function initializeQueue<T>(name: string) {
 	const queue = new Queue<T>(name, {
 		connection,
 		prefix
 	});
 
+	/*
+	const s = new QueueScheduler(name, {
+		connection,
+		prefix
+	});
+	*/
+
+	/*
+	queue.limiter = {
+		max: 1,
+		duration: 10000
+	};
+	*/
+
+/*
 	if (limitPerSec > 0) {
 		queue.limiter = {
-			max: limitPerSec * 5,
-			duration: 5000
+			max: 1,
+			duration: 10000
 		};
 	}
+*/
 
 	return queue;
 }
@@ -82,8 +98,8 @@ export type DeleteNoteJobData = {
 };
 //#endregion
 
-export const deliverQueue = initializeQueue<DeliverJobData>('deliver', config.deliverJobPerSec || 128);
-export const inboxQueue = initializeQueue<InboxJobData>('inbox', config.inboxJobPerSec || 16);
+export const deliverQueue = initializeQueue<DeliverJobData>('deliver');
+export const inboxQueue = initializeQueue<InboxJobData>('inbox');
 export const dbQueue = initializeQueue<DbJobData>('db');
 export let deliverWorker: Worker<DeliverJobData>;
 export let inboxWorker: Worker<InboxJobData>;
@@ -246,6 +262,15 @@ export default function() {
 			prefix,
 			concurrency: config.deliverJobConcurrency || 128
 		});
+
+		/*if (config.deliverJobPerSec > 0) {
+			deliverWorker.opts.limiter = {
+				max: 1,
+				duration: 10000
+			};
+			}
+		*/
+
 		inboxWorker = new Worker<InboxJobData>('inbox', processInbox, {
 			connection,
 			prefix,
