@@ -22,10 +22,12 @@ const connection = new IORedis({
 	db: config.redis.db || 0,
 });
 
+const prefix = config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue';
+
 function initializeQueue<T>(name: string, limitPerSec = -1) {
 	const queue = new Queue<T>(name, {
 		connection,
-		prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
+		prefix
 	});
 
 	if (limitPerSec > 0) {
@@ -241,17 +243,17 @@ export default function() {
 	if (!program.onlyServer) {
 		deliverWorker = new Worker<DeliverJobData>('deliver', processDeliver, {
 			connection,
-			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
-			concurrency: 128
+			prefix,
+			concurrency: config.deliverJobConcurrency || 128
 		});
 		inboxWorker = new Worker<InboxJobData>('inbox', processInbox, {
 			connection,
-			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
-			concurrency: 16
+			prefix,
+			concurrency: config.inboxJobConcurrency || 16
 		});
 		dbWorker = new Worker<DbJobData>('db', processInbox, {
 			connection,
-			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
+			prefix,
 			concurrency: 1
 		});
 
