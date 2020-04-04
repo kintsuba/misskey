@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as tmp from 'tmp';
 import * as fs from 'fs';
 import * as mongo from 'mongodb';
@@ -13,7 +13,7 @@ import { DbUserJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('export-following');
 
-export async function exportFollowing(job: Bull.Job<DbUserJobData>): Promise<string> {
+export async function exportFollowing(job: Job<DbUserJobData>): Promise<string> {
 	logger.info(`Exporting following of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({
@@ -51,7 +51,7 @@ export async function exportFollowing(job: Bull.Job<DbUserJobData>): Promise<str
 		});
 
 		if (followings.length === 0) {
-			job.progress(100);
+			job.progress = 100;
 			break;
 		}
 
@@ -73,7 +73,7 @@ export async function exportFollowing(job: Bull.Job<DbUserJobData>): Promise<str
 			exportedCount++;
 		}
 
-		job.progress(exportedCount / total);
+		job.progress = exportedCount / total;
 	}
 
 	stream.end();

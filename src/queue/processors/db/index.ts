@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job, Queue } from 'bullmq';
 import { deleteNotes } from './delete-notes';
 import { deleteDriveFiles } from './delete-drive-files';
 import { deleteNote } from './delete-note';
@@ -23,8 +23,10 @@ const jobs = {
 	importUserLists
 } as any;
 
-export default function(dbQueue: Bull.Queue) {
+export default function(dbQueue: Queue) {
+	/*
 	for (const [k, v] of Object.entries(jobs)) {
 		dbQueue.process(k, v as any);
 	}
+	*/
 }

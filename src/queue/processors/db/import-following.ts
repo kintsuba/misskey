@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as mongo from 'mongodb';
 
 import { queueLogger } from '../../logger';
@@ -14,7 +14,7 @@ import { DbUserImportJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('import-following');
 
-export async function importFollowing(job: Bull.Job<DbUserImportJobData>): Promise<string> {
+export async function importFollowing(job: Job<DbUserImportJobData>): Promise<string> {
 	logger.info(`Importing following of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({

@@ -1,6 +1,7 @@
 import { ObjectID } from 'mongodb';
-import * as Queue from 'bull';
+import { Queue, Worker } from 'bullmq';
 import * as httpSignature from 'http-signature';
+import * as IORedis from 'ioredis';
 
 import config from '../config';
 import { ILocalUser } from '../models/user';
@@ -8,27 +9,33 @@ import { program } from '../argv';
 
 import processDeliver from './processors/deliver';
 import processInbox from './processors/inbox';
-import processDb from './processors/db';
 import { queueLogger } from './logger';
 import { IDriveFile } from '../models/drive-file';
 import { INote } from '../models/note';
 import { getJobInfo } from './get-job-info';
 import { IActivity } from '../remote/activitypub/type';
 
+const connection = new IORedis({
+	port: config.redis.port,
+	host: config.redis.host,
+	password: config.redis.pass,
+	db: config.redis.db || 0,
+});
+
 function initializeQueue<T>(name: string, limitPerSec = -1) {
-	return new Queue<T>(name, config.redis != null ? {
-		redis: {
-			port: config.redis.port,
-			host: config.redis.host,
-			password: config.redis.pass,
-			db: config.redis.db || 0,
-		},
+	const queue = new Queue<T>(name, {
+		connection,
 		prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
-		limiter: limitPerSec > 0 ? {
+	});
+
+	if (limitPerSec > 0) {
+		queue.limiter = {
 			max: limitPerSec * 5,
 			duration: 5000
-		} : undefined
-	} : null);
+		};
+	}
+
+	return queue;
 }
 
 //#region job data types
@@ -76,34 +83,13 @@ export type DeleteNoteJobData = {
 export const deliverQueue = initializeQueue<DeliverJobData>('deliver', config.deliverJobPerSec || 128);
 export const inboxQueue = initializeQueue<InboxJobData>('inbox', config.inboxJobPerSec || 16);
 export const dbQueue = initializeQueue<DbJobData>('db');
+export let deliverWorker: Worker<DeliverJobData>;
+export let inboxWorker: Worker<InboxJobData>;
+export let dbWorker: Worker<DbJobData>;
 
 const deliverLogger = queueLogger.createSubLogger('deliver');
 const inboxLogger = queueLogger.createSubLogger('inbox');
 const dbLogger = queueLogger.createSubLogger('db');
-
-deliverQueue
-	.on('waiting', (jobId) => deliverLogger.debug(`waiting id=${jobId}`))
-	.on('active', (job) => deliverLogger.info(`active ${getJobInfo(job, true)} to=${job.data.to}`))
-	.on('completed', (job, result) => deliverLogger.info(`completed(${result}) ${getJobInfo(job, true)} to=${job.data.to}`))
-	.on('failed', (job, err) => deliverLogger.warn(`failed(${err}) ${getJobInfo(job)} to=${job.data.to}`))
-	.on('error', (error) => deliverLogger.error(`error ${error}`))
-	.on('stalled', (job) => deliverLogger.warn(`stalled ${getJobInfo(job)} to=${job.data.to}`));
-
-inboxQueue
-	.on('waiting', (jobId) => inboxLogger.debug(`waiting id=${jobId}`))
-	.on('active', (job) => inboxLogger.info(`active ${getJobInfo(job, true)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
-	.on('completed', (job, result) => inboxLogger.info(`completed(${result}) ${getJobInfo(job, true)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
-	.on('failed', (job, err) => inboxLogger.warn(`failed(${err}) ${getJobInfo(job)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
-	.on('error', (error) => inboxLogger.error(`error ${error}`))
-	.on('stalled', (job) => inboxLogger.warn(`stalled ${getJobInfo(job)} activity=${job.data.activity ? job.data.activity.id : 'none'}`));
-
-dbQueue
-	.on('waiting', (jobId) => dbLogger.debug(`waiting id=${jobId}`))
-	.on('active', (job) => dbLogger.info(`${job.name} active ${getJobInfo(job, true)}`))
-	.on('completed', (job, result) => dbLogger.info(`${job.name} completed(${result}) ${getJobInfo(job, true)}`))
-	.on('failed', (job, err) => dbLogger.warn(`${job.name} failed(${err}) ${getJobInfo(job)}`))
-	.on('error', (error) => dbLogger.error(`error ${error}`))
-	.on('stalled', (job) => dbLogger.warn(`${job.name} stalled ${getJobInfo(job)}`));
 
 /**
  * Queue deliver job
@@ -125,7 +111,7 @@ export function deliver(user: ILocalUser, content: any, to: string, lowSeverity 
 		inboxInfo
 	};
 
-	return deliverQueue.add(data, {
+	return deliverQueue.add('deliverJob', data, {
 		attempts,
 		backoff: {
 			type: 'exponential',
@@ -147,7 +133,7 @@ export function inbox(activity: IActivity, signature: httpSignature.IParsedSigna
 		signature
 	};
 
-	return inboxQueue.add(data, {
+	return inboxQueue.add('inboxJob', data, {
 		attempts: config.inboxJobMaxAttempts || 8,
 		backoff: {
 			type: 'exponential',
@@ -253,13 +239,50 @@ export function createImportUserListsJob(user: ILocalUser, fileId: IDriveFile['_
 
 export default function() {
 	if (!program.onlyServer) {
-		deliverQueue.process(config.deliverJobConcurrency || 128, processDeliver);
-		inboxQueue.process(config.inboxJobConcurrency || 16, processInbox);
-		processDb(dbQueue);
+		deliverWorker = new Worker<DeliverJobData>('deliver', processDeliver, {
+			connection,
+			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
+			concurrency: 128
+		});
+		inboxWorker = new Worker<InboxJobData>('inbox', processInbox, {
+			connection,
+			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
+			concurrency: 16
+		});
+		dbWorker = new Worker<DbJobData>('db', processInbox, {
+			connection,
+			prefix: config.redis.prefix ? `${config.redis.prefix}:queue` : 'queue',
+			concurrency: 1
+		});
+
+		deliverWorker
+		.on('waiting', (jobId) => deliverLogger.debug(`waiting id=${jobId}`))
+		.on('active', (job) => deliverLogger.info(`active ${getJobInfo(job, true)} to=${job.data.to}`))
+		.on('completed', (job, result) => deliverLogger.info(`completed(${result}) ${getJobInfo(job, true)} to=${job.data.to}`))
+		.on('failed', (job, err) => deliverLogger.warn(`failed(${err}) ${getJobInfo(job)} to=${job.data.to}`))
+		.on('error', (error) => deliverLogger.error(`error ${error}`))
+		.on('stalled', (job) => deliverLogger.warn(`stalled ${getJobInfo(job)} to=${job.data.to}`));
+
+		inboxWorker
+			.on('waiting', (jobId) => inboxLogger.debug(`waiting id=${jobId}`))
+			.on('active', (job) => inboxLogger.info(`active ${getJobInfo(job, true)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
+			.on('completed', (job, result) => inboxLogger.info(`completed(${result}) ${getJobInfo(job, true)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
+			.on('failed', (job, err) => inboxLogger.warn(`failed(${err}) ${getJobInfo(job)} activity=${job.data.activity ? job.data.activity.id : 'none'}`))
+			.on('error', (error) => inboxLogger.error(`error ${error}`))
+			.on('stalled', (job) => inboxLogger.warn(`stalled ${getJobInfo(job)} activity=${job.data.activity ? job.data.activity.id : 'none'}`));
+
+		dbQueue
+			.on('waiting', (jobId) => dbLogger.debug(`waiting id=${jobId}`))
+			.on('active', (job) => dbLogger.info(`${job.name} active ${getJobInfo(job, true)}`))
+			.on('completed', (job, result) => dbLogger.info(`${job.name} completed(${result}) ${getJobInfo(job, true)}`))
+			.on('failed', (job, err) => dbLogger.warn(`${job.name} failed(${err}) ${getJobInfo(job)}`))
+			.on('error', (error) => dbLogger.error(`error ${error}`))
+			.on('stalled', (job) => dbLogger.warn(`${job.name} stalled ${getJobInfo(job)}`));
 	}
 }
 
 export function destroy() {
+	/*
 	deliverQueue.once('cleaned', (jobs, status) => {
 		deliverLogger.succ(`Cleaned ${jobs.length} ${status} jobs`);
 	});
@@ -269,4 +292,5 @@ export function destroy() {
 		inboxLogger.succ(`Cleaned ${jobs.length} ${status} jobs`);
 	});
 	inboxQueue.clean(0, 'delayed');
+	*/
 }

@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as tmp from 'tmp';
 import * as fs from 'fs';
 import * as mongo from 'mongodb';
@@ -13,7 +13,7 @@ import { DbUserJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('export-user-lists');
 
-export async function exportUserLists(job: Bull.Job<DbUserJobData>): Promise<string> {
+export async function exportUserLists(job: Job<DbUserJobData>): Promise<string> {
 	logger.info(`Exporting user lists of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({

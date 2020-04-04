@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as tmp from 'tmp';
 import * as fs from 'fs';
 import * as mongo from 'mongodb';
@@ -12,7 +12,7 @@ import { DbUserJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('export-notes');
 
-export async function exportNotes(job: Bull.Job<DbUserJobData>): Promise<string> {
+export async function exportNotes(job: Job<DbUserJobData>): Promise<string> {
 	logger.info(`Exporting notes of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({
@@ -61,7 +61,7 @@ export async function exportNotes(job: Bull.Job<DbUserJobData>): Promise<string>
 		});
 
 		if (notes.length === 0) {
-			job.progress(100);
+			job.progress = 100;
 			break;
 		}
 
@@ -82,7 +82,7 @@ export async function exportNotes(job: Bull.Job<DbUserJobData>): Promise<string>
 			exportedNotesCount++;
 		}
 
-		job.progress(exportedNotesCount / total);
+		job.progress = exportedNotesCount / total;
 	}
 
 	await new Promise((res, rej) => {

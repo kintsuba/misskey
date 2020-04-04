@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as tmp from 'tmp';
 import * as fs from 'fs';
 import * as mongo from 'mongodb';
@@ -13,7 +13,7 @@ import { DbUserJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('export-mute');
 
-export async function exportMute(job: Bull.Job<DbUserJobData>): Promise<string> {
+export async function exportMute(job: Job<DbUserJobData>): Promise<string> {
 	logger.info(`Exporting mute of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({
@@ -51,7 +51,7 @@ export async function exportMute(job: Bull.Job<DbUserJobData>): Promise<string> 
 		});
 
 		if (mutes.length === 0) {
-			job.progress(100);
+			job.progress = 100;
 			break;
 		}
 
@@ -73,7 +73,7 @@ export async function exportMute(job: Bull.Job<DbUserJobData>): Promise<string> 
 			exportedCount++;
 		}
 
-		job.progress(exportedCount / total);
+		job.progress = exportedCount / total;
 	}
 
 	stream.end();

@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as mongo from 'mongodb';
 
 import { queueLogger } from '../../logger';
@@ -9,7 +9,7 @@ import { DbUserJobData } from '../..';
 
 const logger = queueLogger.createSubLogger('delete-notes');
 
-export async function deleteNotes(job: Bull.Job<DbUserJobData>): Promise<string> {
+export async function deleteNotes(job: Job<DbUserJobData>): Promise<string> {
 	logger.info(`Deleting notes of ${job.data.user._id} ...`);
 
 	const user = await User.findOne({
@@ -35,7 +35,7 @@ export async function deleteNotes(job: Bull.Job<DbUserJobData>): Promise<string>
 		});
 
 		if (notes.length === 0) {
-			job.progress(100);
+			job.progress = 100;
 			break;
 		}
 
@@ -46,7 +46,7 @@ export async function deleteNotes(job: Bull.Job<DbUserJobData>): Promise<string>
 			deletedCount++;
 		}
 
-		job.progress(deletedCount / total);
+		job.progress = deletedCount / total;
 	}
 
 	return `ok: All notes (${deletedCount}) of ${user._id} has been deleted.`;

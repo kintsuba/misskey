@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import * as Bull from 'bullmq';
 import request from '../../remote/activitypub/request';
 import { registerOrFetchInstanceDoc } from '../../services/register-or-fetch-instance-doc';
 import Instance from '../../models/instance';

@@ -1,4 +1,4 @@
-import * as Bull from 'bull';
+import { Job } from 'bullmq';
 import * as httpSignature from 'http-signature';
 import parseAcct from '../../misc/acct/parse';
 import User, { IRemoteUser } from '../../models/user';
@@ -19,7 +19,7 @@ import { InboxJobData } from '..';
 const logger = new Logger('inbox');
 
 // ユーザーのinboxにアクティビティが届いた時の処理
-export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
+export default async (job: Job<InboxJobData>): Promise<string> => {
 	const signature = job.data.signature;
 	const activity = job.data.activity;
 
