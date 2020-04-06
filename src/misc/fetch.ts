@@ -1,17 +1,17 @@
 import * as http from 'http';
 import * as https from 'https';
 import * as cache from 'lookup-dns-cache';
-import fetch from 'node-fetch';
+import fetch, { HeadersInit } from 'node-fetch';
 import { HttpProxyAgent } from 'http-proxy-agent';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import config from '../config';
 
-export async function getJson(url: string, accept = 'application/json, */*', timeout = 10000) {
+export async function getJson(url: string, accept = 'application/json, */*', timeout = 10000, headers?: HeadersInit) {
 	const res = await fetch(url, {
-		headers: {
+		headers: Object.assign({
 			'User-Agent': config.userAgent,
 			Accept: accept
-		},
+		}, headers || {}),
 		timeout,
 		agent: u => u.protocol == 'http:' ? httpAgent : httpsAgent,
 	});
