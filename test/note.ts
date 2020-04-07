@@ -18,14 +18,14 @@ import { initDb } from '../src/db/postgre';
 
 describe('Note', () => {
 	let p: childProcess.ChildProcess;
-	let Notes: any;
+	//let Notes: any;
 
 	let alice: any;
 	let bob: any;
 
 	before(launchServer(g => p = g, async () => {
-		const connection = await initDb(true);
-		Notes = connection.getRepository(Note);
+		//const connection = await initDb(true);
+		//Notes = connection.getRepository(Note);
 		alice = await signup({ username: 'alice' });
 		bob = await signup({ username: 'bob' });
 	}));
