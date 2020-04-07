@@ -13,8 +13,6 @@ process.env.NODE_ENV = 'test';
 import * as assert from 'assert';
 import * as childProcess from 'child_process';
 import { async, signup, request, uploadFile, launchServer } from './utils';
-import { Note } from '../src/models/entities/note';
-import { initDb } from '../src/db/postgre';
 
 describe('Note', () => {
 	let p: childProcess.ChildProcess;
