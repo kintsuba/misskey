@@ -34,7 +34,7 @@ export const serverLogger = new Logger('server', 'gray', false);
 const app = new Koa();
 app.proxy = true;
 
-if (!['production', 'test'].includes(process.env.NODE_ENV || '')) {
+if (!['production'].includes(process.env.NODE_ENV || '')) {
 	// Logger
 	app.use(koaLogger(str => {
 		serverLogger.info(str);
