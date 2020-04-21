@@ -100,6 +100,8 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 			if (!verified) {
 				return `skip: LD-Signatureの検証に失敗しました`;
 			}
+
+			console.log(`LD-Signatureで検証されました`);
 		}
 	}
 
