@@ -2,41 +2,34 @@
 <div class="gqyayizv">
 	<div class="backdrop" ref="backdrop" @click="close"></div>
 	<div class="popover" :class="{ isMobile: $root.isMobile }" ref="popover">
-		<div @click="choose('public')" :class="{ active: v == 'public' }">
+		<!-- <div @click="choose('public')" :class="{ active: v == 'public' }">
 			<x-visibility-icon v="public"/>
 			<div>
 				<span>{{ $t('public') }}</span>
 				<span>{{ $t('public-desc') }}</span>
 			</div>
-		</div>
-		<div @click="choose('home')" :class="{ active: v == 'home' }">
+		</div> -->
+		<!-- <div @click="choose('home')" :class="{ active: v == 'home' }">
 			<x-visibility-icon v="home"/>
 		<div>
 				<span>{{ $t('home') }}</span>
 				<span>{{ $t('home-desc') }}</span>
 			</div>
-		</div>
-		<div @click="choose('followers')" :class="{ active: v == 'followers' }">
+		</div> -->
+		<!-- <div @click="choose('followers')" :class="{ active: v == 'followers' }">
 			<x-visibility-icon v="followers"/>
 			<div>
 				<span>{{ $t('followers') }}</span>
 				<span>{{ $t('followers-desc') }}</span>
 			</div>
-		</div>
-		<div @click="choose('specified')" :class="{ active: v == 'specified' }">
-			<x-visibility-icon v="specified"/>
-			<div>
-				<span>{{ $t('specified') }}</span>
-				<span>{{ $t('specified-desc') }}</span>
-			</div>
-		</div>
-		<div @click="choose('once-public')" :class="{ active: v == 'once-public' }">
+		</div> -->
+		<!-- <div @click="choose('once-public')" :class="{ active: v == 'once-public' }">
 			<x-visibility-icon v="once-public"/>
 			<div>
 				<span>{{ $t('once-public') }}</span>
 				<span>{{ $t('once-public-desc') }}</span>
 			</div>
-		</div>
+		</div> -->
 		<div @click="choose('local-public')" :class="{ active: v == 'local-public' }">
 			<x-visibility-icon v="local-public"/>
 			<div>
@@ -56,12 +49,19 @@
 				<span>{{ $t('local-followers') }}</span>
 			</div>
 		</div>
-		<div @click="choose('once-specified')" :class="{ active: v == 'once-specified' }">
+		<div @click="choose('specified')" :class="{ active: v == 'specified' }">
+			<x-visibility-icon v="specified"/>
+			<div>
+				<span>{{ $t('specified') }}</span>
+				<span>{{ $t('specified-desc') }}</span>
+			</div>
+		</div>
+		<!-- <div @click="choose('once-specified')" :class="{ active: v == 'once-specified' }">
 			<x-visibility-icon v="once-specified"/>
 			<div>
 				<span>{{ $t('once-specified') }}</span>
 			</div>
-		</div>
+		</div> -->
 	</div>
 </div>
 </template>
