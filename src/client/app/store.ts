@@ -30,7 +30,7 @@ const defaultSettings = {
 	memo: null,
 	iLikeSushi: false,
 	rememberNoteVisibility: false,
-	defaultNoteVisibility: 'public',
+	defaultNoteVisibility: 'local-public',
 	secondaryNoteVisibility: null,
 	tertiaryNoteVisibility: null,
 	webSearchEngine: 'https://www.google.com/?#q={{query}}',
