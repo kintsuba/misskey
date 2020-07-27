@@ -17,6 +17,7 @@ import DriveFile from './drive-file';
 import getDriveFileUrl from '../misc/get-drive-file-url';
 import UserFilter from './user-filter';
 import { transform } from '../misc/cafy-id';
+import Usertag from './usertag';
 
 const User = db.get<IUser>('users');
 
@@ -59,6 +60,11 @@ type IUserBase = {
 	pinnedNoteIds: mongo.ObjectID[];
 	emojis?: string[];
 	tags?: string[];
+	profile?: {
+		location?: string;
+		birthday?: string; // 'YYYY-MM-DD'
+		tags?: string[];
+	};
 
 	isDeleted: boolean;
 
@@ -158,11 +164,6 @@ export interface ILocalUser extends IUserBase {
 		username: string;
 		discriminator: string;
 	};
-	profile: {
-		location: string;
-		birthday: string; // 'YYYY-MM-DD'
-		tags: string[];
-	};
 	fields?: {
 		name: string;
 		value: string;
@@ -185,6 +186,7 @@ export interface ILocalUser extends IUserBase {
 }
 
 export interface IRemoteUser extends IUserBase {
+	host: string;
 	inbox: string;
 	sharedInbox?: string;
 	outbox?: string;
@@ -443,6 +445,15 @@ export const pack = (
 				removeError: true,
 				detail: true
 			});
+		}
+
+		if (meId) {
+			const usertag = await Usertag.findOne({
+				ownerId: meId,
+				targetId: _user.id
+			});
+
+			_user.usertags = usertag?.tags || [];
 		}
 
 		if (meId && !meId.equals(_user.id)) {

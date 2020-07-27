@@ -6,7 +6,7 @@ import { createDeleteNoteJob } from '../../queue';
 import renderNote from '../../remote/activitypub/renderer/note';
 import renderCreate from '../../remote/activitypub/renderer/create';
 import renderAnnounce from '../../remote/activitypub/renderer/announce';
-import { renderActivity, attachLdSignature } from '../../remote/activitypub/renderer';
+import { renderActivity } from '../../remote/activitypub/renderer';
 import DriveFile, { IDriveFile } from '../../models/drive-file';
 import notify from '../../services/create-notification';
 import NoteWatching from '../../models/note-watching';
@@ -34,6 +34,8 @@ import extractHashtags from '../../misc/extract-hashtags';
 import { genId } from '../../misc/gen-id';
 import DeliverManager from '../../remote/activitypub/deliver-manager';
 import { deliverToRelays } from '../relay';
+import { getIndexer, getWordIndexer } from '../../misc/mecab';
+import Following from '../../models/following';
 
 type NotificationType = 'reply' | 'renote' | 'quote' | 'mention' | 'highlight';
 
@@ -71,11 +73,15 @@ class NotificationManager {
 	}
 
 	public async deliver() {
+		// サイレンスされていたらスキップ
+		if (this.notifier.isSilenced) {
+			return;
+		}
+
 		for (const x of this.queue) {
 			// ミュートされてたらスキップ
 			const mute = await getMute(x.target, this.notifier._id);
 			if (mute) {
-				console.log(`ミュートされてたらスキップ`);
 				continue;
 			}
 
@@ -111,6 +117,8 @@ type Option = {
 };
 
 export default async (user: IUser, data: Option, silent = false) => new Promise<INote>(async (res, rej) => {
+	if (config.disablePosts) return rej({ status: 451 });
+
 	const isFirstNote = user.notesCount === 0;
 	const isPureRenote = data.text == null && data.poll == null && (data.files == null || data.files.length == 0);
 
@@ -324,8 +332,8 @@ export default async (user: IUser, data: Option, silent = false) => new Promise<
 	const nmRelatedPromises = [];
 
 	// Extended notification
-	if (note.visibility === 'public' || note.visibility === 'home') {
-		nmRelatedPromises.push(notifyExtended(note.text, nm));
+	if (note.visibility === 'public' || note.visibility === 'home' || note.visibility === 'followers') {
+		nmRelatedPromises.push(notifyExtended(note, nm));
 	}
 
 	// If has in reply to note
@@ -536,16 +544,40 @@ async function insertNote(user: IUser, data: Option, tags: string[], emojis: str
 }
 
 function index(note: INote) {
-	if (note.text == null || config.elasticsearch == null) return;
+	if (config.mecabSearch) {
+		// for search
+		getIndexer(note).then(mecabWords => {
+			if (note.visibility === 'public' || note.visibility === 'home') {
+				console.log(`Index: ${note._id} ${JSON.stringify(mecabWords)}`);
+			}
+			Note.findOneAndUpdate({ _id: note._id }, {
+				$set: { mecabWords }
+			});
+		});
 
-	es.index({
-		index: 'misskey',
-		type: 'note',
-		id: note._id.toString(),
-		body: {
-			text: note.text
+		// for trend
+		if (note.visibility === 'public' || note.visibility === 'home') {
+			getWordIndexer(note).then(trendWords => {
+				console.log(`WordIndex: ${note._id} ${JSON.stringify(trendWords)}`);
+				Note.findOneAndUpdate({ _id: note._id }, {
+					$set: { trendWords }
+				});
+			});
 		}
-	});
+	}
+
+	if (!note.text || !config.elasticsearch) return;
+
+	if (es) {
+		es.index({
+			index: 'misskey',
+			type: 'note',
+			id: note._id.toString(),
+			body: {
+				text: note.text
+			}
+		});
+	}
 }
 
 async function notifyToWatchersOfRenotee(renote: INote, user: IUser, nm: NotificationManager, type: NotificationType) {
@@ -578,7 +610,8 @@ async function notifyToWatchersOfReplyee(reply: INote, user: IUser, nm: Notifica
 	}
 }
 
-async function notifyExtended(text: string, nm: NotificationManager) {
+async function notifyExtended(note: INote, nm: NotificationManager) {
+	const text = note.text;
 	if (!text) return;
 
 	const us = await User.find({
@@ -588,6 +621,15 @@ async function notifyExtended(text: string, nm: NotificationManager) {
 
 	for (const u of us) {
 		if (!isLocalUser(u)) continue;
+
+		if (note.visibility === 'followers') {
+			const followings = await Following.findOne({
+				followerId: u._id,
+				followeeId: note.userId
+			});
+
+			if (followings == null) return;
+		}
 
 		try {
 			const words: string[] = u.clientSettings.highlightedWords.filter((q: string) => q != null && q.length > 0);

@@ -15,7 +15,7 @@ let latest: string = null;
 export default async (job: Bull.Job<DeliverJobData>) => {
 	const { protocol, host } = new URL(job.data.to);
 
-	if (protocol !== 'https:') return 'skip (invalied protocol)';
+	if (protocol !== 'https:') return 'skip (invalid protocol)';
 
 	// ブロック/閉鎖してたら中断
 	if (await isBlockedHost(host)) {
@@ -70,6 +70,19 @@ export default async (job: Bull.Job<DeliverJobData>) => {
 				if (res.statusCode === 401) {
 					throw `${res.statusCode} ${res.statusMessage}`;
 				}
+
+				// sharedInboxで410を返されたら閉鎖済みとマークする
+				if (res.statusCode === 410 && job.data.inboxInfo?.origin === 'sharedInbox') {
+					logger.info(`${host}: MarkedAsClosed (sharedInbox:410)`);
+					registerOrFetchInstanceDoc(host).then(i => {
+						Instance.update({ _id: i._id }, {
+							$set: {
+								isMarkedAsClosed: true
+							}
+						});
+					});
+				}
+
 				// HTTPステータスコード4xxはクライアントエラーであり、それはつまり
 				// 何回再送しても成功することはないということなのでエラーにはしないでおく
 				return `${res.statusCode} ${res.statusMessage}`;

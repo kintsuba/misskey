@@ -2,6 +2,8 @@ import { getJson } from '../misc/fetch';
 import Instance, { IInstance } from '../models/instance';
 import { toApHost } from '../misc/convert-host';
 import Logger from './logger';
+import { InboxRequestData } from '../queue';
+import { geoIpLookup } from './geoip';
 
 export const logger = new Logger('instanceinfo', 'cyan');
 
@@ -35,14 +37,22 @@ type Nodeinfo = {
 	};
 };
 
-export async function UpdateInstanceinfo(instance: IInstance) {
+export async function UpdateInstanceinfo(instance: IInstance, request?: InboxRequestData) {
 	const _instance = await Instance.findOne({ host: instance.host });
 	if (!_instance) throw 'Instance is not registed';
 
-	const now = Date.now();
-	if (_instance.infoUpdatedAt && (now - _instance.infoUpdatedAt.getTime() < 1000 * 60 * 60 * 24)) {
-		return;
-	}
+	const updateNeeded = () => {
+		if (!_instance.infoUpdatedAt) return true;
+
+		const now = Date.now();
+		if (now - _instance.infoUpdatedAt.getTime() > 1000 * 60 * 60 * 24) return true;
+
+		if (request?.ip && !_instance.isp && (now - _instance.infoUpdatedAt.getTime() > 1000 * 60 * 60 * 1)) return true;
+
+		return false;
+	};
+
+	if (!updateNeeded()) return;
 
 	await Instance.update({ _id: instance._id }, {
 		$set: {
@@ -66,29 +76,48 @@ export async function UpdateInstanceinfo(instance: IInstance) {
 			maintainerEmail: info.maintainerEmail
 		}
 	});
+
+	// GeoIP
+	const geoip = request?.ip ? await geoIpLookup(request.ip).catch(e => {
+		logger.warn(`GeoIP failed for ${toApHost(instance.host!)} ${request.ip} ${e}`);
+		return { cc: '??', isp: '??', org: '??', as: '??' };
+	}) : null;
+	if (geoip) {
+		logger.info(`GeoIP: ${toApHost(instance.host!)} ${request?.ip} => ${JSON.stringify(geoip)}`);
+		await Instance.update({ _id: instance._id }, {
+			$set: {
+				infoUpdatedAt: new Date(),
+				cc: geoip.cc,
+				isp: geoip.isp,
+				org: geoip.org,
+				as: geoip.as,
+			}
+		});
+	}
 }
 
 export async function fetchInstanceinfo(host: string) {
 	const info = await fetchNodeinfo(host).catch(() => null);
 
-	if (!info) {
-		const mastodon = await fetchMastodonInstance(host);
-		return {
-			softwareName: 'mastodon',
-			softwareVersion: mastodon.version,
-		};
+	let name = info?.metadata?.nodeName || info?.metadata?.name || null;
+	let description = info?.metadata?.nodeDescription || info?.metadata?.description || null;
+	const maintainerName = info?.metadata?.maintainer?.name || null;
+	let maintainerEmail = info?.metadata?.maintainer?.email || null;
+
+	// fetch Mastodon API
+	if (!name) {
+		const mastodon = await fetchMastodonInstance(toApHost(host)!).catch(() => {});
+		if (mastodon) {
+			name = mastodon.title;
+			description = mastodon.description;
+			maintainerEmail = mastodon.email;
+		}
 	}
 
-	// additional metadatas
-	const name = info.metadata ? (info.metadata.nodeName || info.metadata.name || null) : null;
-	const description = info.metadata ? (info.metadata.nodeDescription || info.metadata.description || null) : null;
-	const maintainerName = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.name || null) : null : null;
-	const maintainerEmail = info.metadata ? info.metadata.maintainer ? (info.metadata.maintainer.email || null) : null : null;
-
 	return {
-		softwareName: info.software.name,
-		softwareVersion: info.software.version,
-		openRegistrations: info.openRegistrations,
+		softwareName: info?.software?.name,
+		softwareVersion: info?.software?.version,
+		openRegistrations: info?.openRegistrations,
 		name,
 		description,
 		maintainerName,

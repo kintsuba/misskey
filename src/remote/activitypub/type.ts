@@ -224,12 +224,14 @@ export interface IApPerson extends IObject {
 	featured?: any;
 	outbox: any;
 	endpoints: any;
+	'vcard:bday'?: string;
+	'vcard:Address'?: string;
 }
 
-export const valiedActor = ['Person', 'Service', 'Group', 'Organization', 'Application'];
+export const validActor = ['Person', 'Service', 'Group', 'Organization', 'Application'];
 
 export const isActor = (object: IObject): object is IApPerson =>
-	valiedActor.includes(object.type);
+	validActor.includes(object.type);
 
 export interface IApEmoji extends IObject {
 	type: 'Emoji';
@@ -239,7 +241,7 @@ export interface IApEmoji extends IObject {
 }
 
 export const isEmoji = (object: IObject): object is IApEmoji =>
-	object.type === 'Emoji' && typeof name === 'string' && object.icon != null;
+	object.type === 'Emoji' && typeof object.name === 'string' && object.icon != null;
 
 export const isCollection = (object: IObject): object is ICollection =>
 	object.type === 'Collection';

@@ -24,7 +24,7 @@ export async function tryStockEmoji(emoji: IEmoji) {
 		return;
 	}
 
-	if (emoji.saved) {
+	if (emoji.saved && emoji.md5 != null) {
 		//console.log(`saved`);
 		return;
 	}
@@ -48,6 +48,7 @@ export async function stockEmoji(emoji: IEmoji) {
 	await Emoji.update({ _id: emoji._id }, {
 		$set: {
 			url,
+			md5: file.md5,
 			saved: true
 		}
 	});

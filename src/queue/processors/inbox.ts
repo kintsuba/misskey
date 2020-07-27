@@ -18,6 +18,7 @@ import DbResolver from '../../remote/activitypub/db-resolver';
 import { inspect } from 'util';
 import { extractApHost } from '../../misc/convert-host';
 import { LdSignature } from '../../remote/activitypub/misc/ld-signature';
+import resolveUser from '../../remote/resolve-user';
 
 const logger = new Logger('inbox');
 
@@ -34,6 +35,7 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 	logger.debug(inspect(info));
 	//#endregion
 
+	/** peer host (リレーから来たらリレー) */
 	const host = toUnicode(new URL(signature.keyId).hostname.toLowerCase());
 
 	// ブロックしてたら中断
@@ -68,6 +70,11 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 
 	// http-signature signerのpublicKeyを元にhttp-signatureを検証
 	const httpSignatureValidated = httpSignature.verifySignature(signature, user.publicKey.publicKeyPem);
+
+	// 署名検証失敗時にはkeyが変わったことも想定して、WebFingerからのユーザー情報の更新をトリガしておく (24時間以上古い場合に発動)
+	if (!httpSignatureValidated) {
+		resolveUser(user.username, user.host);
+	}
 
 	// また、http-signatureのsignerは、activity.actorと一致する必要がある
 	if (!httpSignatureValidated || user.uri !== activity.actor) {
@@ -130,18 +137,19 @@ export default async (job: Bull.Job<InboxJobData>): Promise<string> => {
 	});
 
 	// Update stats
-	registerOrFetchInstanceDoc(user.host).then(i => {
+	registerOrFetchInstanceDoc(host).then(i => {
 		const set = {
 			latestRequestReceivedAt: new Date(),
 			lastCommunicatedAt: new Date(),
-			isNotResponding: false
+			isNotResponding: false,
+			isMarkedAsClosed: false,
 		} as any;
 
 		Instance.update({ _id: i._id }, {
 			$set: set
 		});
 
-		UpdateInstanceinfo(i);
+		UpdateInstanceinfo(i, job.data.request);
 
 		instanceChart.requestReceived(i.host);
 	});

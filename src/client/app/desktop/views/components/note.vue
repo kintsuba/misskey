@@ -1,7 +1,9 @@
 <template>
 <div
 	class="note"
-	:class="{ mini: narrow }"
+	:class="{
+		mini: narrow,
+	 }"
 	v-show="appearNote.deletedAt == null && !hideThisNote"
 	:tabindex="appearNote.deletedAt == null ? '-1' : null"
 	v-hotkey="keymap"
@@ -9,10 +11,29 @@
 >
 	<mk-renote class="renote" v-if="isRenote" :note="note"/>
 	<x-sub v-for="note in conversation" :key="note.id" :note="note"/>
-	<div class="reply-to" v-if="appearNote.reply && (!$store.getters.isSignedIn || $store.state.settings.showReplyTarget) && !preview">
+	<div
+		class="reply-to"
+		:class="{
+			'visibility-home': appearNote.reply.visibility === 'home',
+			'visibility-followers': appearNote.reply.visibility === 'followers',
+			'visibility-specified': appearNote.reply.visibility === 'specified',
+			'coloring-bg': $store.state.device.visibilityColoring === 'bg',
+			'coloring-left': $store.state.device.visibilityColoring === 'left',
+		}"
+		v-if="appearNote.reply && (!$store.getters.isSignedIn || $store.state.settings.showReplyTarget) && !preview"
+	>
 		<x-sub :note="appearNote.reply"/>
 	</div>
-	<article class="article">
+	<article
+		class="article"
+		:class="{
+			'visibility-home': appearNote.visibility === 'home',
+			'visibility-followers': appearNote.visibility === 'followers',
+			'visibility-specified': appearNote.visibility === 'specified',
+			'coloring-bg': $store.state.device.visibilityColoring === 'bg',
+			'coloring-left': $store.state.device.visibilityColoring === 'left',
+		}"
+	>
 		<mk-avatar class="avatar" :user="appearNote.user"/>
 		<div class="main">
 			<mk-note-header class="header" :note="appearNote" :mini="narrow" :no-info="detail"/>
@@ -22,7 +43,7 @@
 					<mk-cw-button v-model="showContent" :note="appearNote"/>
 				</p>
 				<div class="content" v-show="appearNote.cw == null || showContent">
-					<div class="text" :class="{ scroll : true }">
+					<div class="text" :class="{ scroll : !detail }">
 						<span v-if="appearNote.isHidden" style="opacity: 0.5">{{ $t('private') }}</span>
 						<a class="reply" v-if="appearNote.reply"><fa icon="reply"/></a>
 						<mfm v-if="appearNote.text" :text="appearNote.text" :author="appearNote.user" :i="$store.state.i" :custom-emojis="appearNote.emojis"
@@ -35,7 +56,7 @@
 					<mk-poll v-if="appearNote.poll" :note="appearNote" ref="pollViewer"/>
 					<a class="location" v-if="appearNote.geo" :href="`https://maps.google.com/maps?q=${appearNote.geo.coordinates[1]},${appearNote.geo.coordinates[0]}`" rel="noopener" target="_blank"><fa icon="map-marker-alt"/> 位置情報</a>
 					<div class="renote" v-if="appearNote.renote"><mk-note-preview :note="appearNote.renote"/></div>
-					<mk-url-preview v-for="url in urls" :url="url" :key="url" :mini="mini" :compact="compact"/>
+					<mk-url-preview v-for="url in urls" :url="url" :key="url" :mini="mini" :compact="compact" :detail="detail"/>
 				</div>
 			</div>
 			<footer v-if="appearNote.deletedAt == null && !preview" class="footer">
@@ -212,9 +233,54 @@ export default Vue.extend({
 	> .renote + article
 		padding-top 8px
 
+	> .reply-to
+		&.coloring-bg
+			&.visibility-home
+				background-color var(--noteHomeBg)
+
+			&.visibility-followers
+				background-color var(--noteFollowersBg)
+
+			&.visibility-specified
+				background-color var(--noteSpecifiedBg)
+
+		&.coloring-left
+			border-left: transparent solid 5px
+
+			&.visibility-home
+				border-left-color var(--noteHomeBorder)
+
+			&.visibility-followers
+				border-left-color var(--noteFollowersBorder)
+
+			&.visibility-specified
+				border-left-color var(--noteSpecifiedBorder)
+
 	> .article
 		display flex
 		padding 16px 32px 8px 32px
+
+		&.coloring-bg
+			&.visibility-home
+				background-color var(--noteHomeBg)
+
+			&.visibility-followers
+				background-color var(--noteFollowersBg)
+
+			&.visibility-specified
+				background-color var(--noteSpecifiedBg)
+
+		&.coloring-left
+			border-left: transparent solid 5px
+
+			&.visibility-home
+				border-left-color var(--noteHomeBorder)
+
+			&.visibility-followers
+				border-left-color var(--noteFollowersBorder)
+
+			&.visibility-specified
+				border-left-color var(--noteSpecifiedBorder)
 
 		&:hover
 			> .main > footer > button

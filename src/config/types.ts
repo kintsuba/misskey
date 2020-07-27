@@ -29,8 +29,13 @@ export type Source = {
 	};
 	drive?: DriveConfig;
 	remoteDrive?: DriveConfig;
+	proxyRemoteFiles?: boolean;
 
 	autoAdmin?: boolean;
+
+	disableFederation?: boolean;
+	disableUrlPreview?: boolean;
+	disablePosts?: boolean;
 
 	proxy?: string;
 	proxySmtp?: string;
@@ -53,6 +58,13 @@ export type Source = {
 	inboxJobPerSec?: number;
 	deliverJobMaxAttempts?: number;
 	inboxJobMaxAttempts?: number;
+
+	mecabSearch?: {
+		mecabBin: string;
+		mecabDic: string;
+	};
+
+	icons?: Icons
 };
 
 export type DriveConfig = {
@@ -70,6 +82,22 @@ export type DriveConfig = {
 		transport?: string;
 		sessionToken?: string;
 		partSize?: number;
+	};
+};
+
+export type Icons = {
+	favicon?: {
+		url?: string;
+		type?: string;
+	};
+	appleTouchIcon?: {
+		url?: string;
+	};
+	manifest192?: {
+		url?: string;
+	};
+	manifest512?: {
+		url?: string;
 	};
 };
 

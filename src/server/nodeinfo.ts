@@ -2,7 +2,7 @@ import * as Router from '@koa/router';
 import config from '../config';
 import fetchMeta from '../misc/fetch-meta';
 import User from '../models/user';
-import Note from '../models/note';
+//import Note from '../models/note';
 import { repositoryUrl } from '../const.json';
 import Relay from '../models/relay';
 import { fromHtml } from '../mfm/fromHtml';
@@ -23,11 +23,11 @@ export const links = [/* (awaiting release) {
 const nodeinfo2 = async () => {
 	const meta = await fetchMeta();
 
-	const total = await User.count({ host: null });
-	const activeHalfyear = await User.count({ host: null, updatedAt: { $gt: new Date(Date.now() - 15552000000) } });
-	const activeMonth = await User.count({ host: null, updatedAt: { $gt: new Date(Date.now() - 2592000000) } });
-	const localPosts = await Note.count({ '_user.host': null, replyId: null });
-	const localComments = await Note.count({ '_user.host': null, replyId: { $ne: null } });
+	//const total = await User.count({ host: null });
+	//const activeHalfyear = await User.count({ host: null, updatedAt: { $gt: new Date(Date.now() - 15552000000) } });
+	//const activeMonth = await User.count({ host: null, updatedAt: { $gt: new Date(Date.now() - 2592000000) } });
+	//const localPosts = await Note.count({ '_user.host': null, replyId: null });
+	//const localComments = await Note.count({ '_user.host': null, replyId: { $ne: null } });
 
 	const relayActor = await User.findOne({ host: null, username: 'relay.actor' });
 
@@ -56,9 +56,6 @@ const nodeinfo2 = async () => {
 		},
 		openRegistrations: !meta.disableRegistration,
 		usage: {
-			users: { total, activeHalfyear, activeMonth },
-			localPosts,
-			localComments
 		},
 		metadata: {
 			nodeName,
@@ -85,6 +82,8 @@ const nodeinfo2 = async () => {
 };
 
 router.get(nodeinfo2_1path, async ctx => {
+	if (config.disableFederation) ctx.throw(404);
+
 	const base = await nodeinfo2();
 
 	ctx.body = { version: '2.1', ...base };
@@ -92,6 +91,8 @@ router.get(nodeinfo2_1path, async ctx => {
 });
 
 router.get(nodeinfo2_0path, async ctx => {
+	if (config.disableFederation) ctx.throw(404);
+
 	const base = await nodeinfo2();
 
 	delete base.software.repository;

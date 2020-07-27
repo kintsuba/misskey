@@ -38,13 +38,16 @@
 			</dl>
 		</div>
 		<div class="info">
-			<span class="location" v-if="user.host === null && user.profile.location"><fa icon="map-marker"/> {{ user.profile.location }}</span>
-			<span class="birthday" v-if="user.host === null && user.profile.birthday"><fa icon="birthday-cake"/> {{ user.profile.birthday.replace('-', $t('year')).replace('-', $t('month')) + $t('day') }} ({{ $t('years-old', { age }) }})</span>
+			<span class="location" v-if="user.profile && user.profile.location"><fa icon="map-marker"/> {{ user.profile.location }}</span>
+			<span class="birthday" v-if="user.profile && user.profile.birthday"><fa icon="birthday-cake"/> {{ user.profile.birthday.replace('-', $t('year')).replace('-', $t('month')) + $t('day') }} ({{ $t('years-old', { age }) }})</span>
 		</div>
 		<div class="status">
 			<router-link :to="user | userPage()" class="notes-count"><b>{{ user.notesCount | number }}</b>{{ $t('posts') }}</router-link>
 			<router-link :to="user | userPage('following')" class="following clickable"><b>{{ user.followingCount | number }}</b>{{ $t('following') }}</router-link>
 			<router-link :to="user | userPage('followers')" class="followers clickable"><b>{{ user.followersCount | number }}</b>{{ $t('followers') }}</router-link>
+		</div>
+		<div class="usertags">
+			<a class="usertag" v-for="usertag in user.usertags" :key="usertag" @click="removeUsertag(usertag)"><fa :icon="faUserTag"/>{{ usertag }}</a>
 		</div>
 	</div>
 </div>
@@ -58,6 +61,7 @@ import XUserMenu from '../../../../common/views/components/user-menu.vue';
 import XListMenu from '../../../../common/views/components/list-menu.vue';
 import XIntegrations from '../../../../common/views/components/integrations.vue';
 import ImageViewer from '../../../../common/views/components/image-viewer.vue';
+import { faUserTag } from '@fortawesome/free-solid-svg-icons';
 
 export default Vue.extend({
 	i18n: i18n('desktop/views/pages/user/user.header.vue'),
@@ -65,6 +69,11 @@ export default Vue.extend({
 		XIntegrations
 	},
 	props: ['user'],
+	data() {
+		return {
+			faUserTag
+		}
+	},
 	computed: {
 		style(): any {
 			if (this.user.bannerUrl == null) return {};
@@ -138,6 +147,31 @@ export default Vue.extend({
 			});
 			this.$once('hook:beforeDestroy', () => {
 				w.destroyDom();
+			});
+		},
+
+		async removeUsertag(usertag: string) {
+			const { canceled } = await this.$root.dialog({
+				type: 'warning',
+				title: this.$t('@.removeUsertagConfirm'),
+				showCancelButton: true,
+			});
+
+			if (canceled) return;
+
+			this.$root.api('usertags/remove', {
+				targetId: this.user.id,
+				tag: usertag
+			}).then(() => {
+				this.$root.dialog({
+					type: 'success',
+					splash: true
+				});
+			}, (e: any) => {
+				this.$root.dialog({
+					type: 'error',
+					text: e
+				});
 			});
 		},
 	}
@@ -303,5 +337,12 @@ export default Vue.extend({
 					font-size 1rem
 					font-weight bold
 					color var(--primary)
+
+		> .usertags
+			margin-left -0.5em
+
+			> .usertag
+				margin-left 0.5em
+				color var(--text)
 
 </style>

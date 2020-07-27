@@ -1,11 +1,14 @@
-import User from '../models/user';
+// 90日以内のFav/PinもリアクションもRenoteもされてないリモート投稿を削除する
+import User, { IUser } from '../models/user';
 import Note from '../models/note';
-import { ObjectID } from 'mongodb';
 import Favorite from '../models/favorite';
 import { concat } from '../prelude/array';
+import { genMeid7 } from '../misc/id/meid7';
+import { ObjectID } from 'mongodb';
 
-async function main() {
-	const id = new ObjectID('700000000000000000000000');
+async function main(days = 90) {
+	const limit = new Date(Date.now() - (days * 1000 * 86400));
+	const id = new ObjectID(genMeid7(limit));
 
 	// favs
 	const favs = await Favorite.find({
@@ -28,7 +31,7 @@ async function main() {
 
 		const user = await User.findOne({
 			_id: u._id
-		});
+		}) as IUser;
 
 		console.log(`user(${prs}/${users.length}): ${user.username}@${user.host}`);
 
@@ -83,6 +86,8 @@ async function main() {
 	}
 }
 
-main().then(() => {
+const args = process.argv.slice(2);
+
+main(args[0]).then(() => {
 	console.log('Done');
 });

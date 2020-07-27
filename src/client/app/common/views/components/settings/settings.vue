@@ -63,6 +63,12 @@
 				<ui-radio v-model="deckColumnAlign" value="left">{{ $t('@._settings.deck-column-align-left') }}</ui-radio>
 				<ui-radio v-model="deckColumnAlign" value="flexible">{{ $t('@._settings.deck-column-align-flexible') }}</ui-radio>
 			</section>
+			<section>
+				<header>{{ $t('@._settings.visibilityColoring') }}</header>
+				<ui-radio v-model="visibilityColoring" value="none">{{ $t('@._settings.visibilityColoring-none') }}</ui-radio>
+				<ui-radio v-model="visibilityColoring" value="bg">{{ $t('@._settings.visibilityColoring-bg') }}</ui-radio>
+				<ui-radio v-model="visibilityColoring" value="left">{{ $t('@._settings.visibilityColoring-left') }}</ui-radio>
+			</section>
 			<section v-if="isAdvanced">
 				<ui-switch v-model="games_reversi_showBoardLabels">{{ $t('@._settings.show-reversi-board-labels') }}</ui-switch>
 				<ui-switch v-model="games_reversi_useAvatarStones">{{ $t('@._settings.use-avatar-reversi-stones') }}</ui-switch>
@@ -77,11 +83,6 @@
 			<section>
 				<ui-switch v-model="fetchOnScroll">{{ $t('@._settings.fetch-on-scroll') }}
 					<template #desc>{{ $t('@._settings.fetch-on-scroll-desc') }}</template>
-				</ui-switch>
-
-				<ui-switch v-model="disableClientImageResizing">
-					{{ $t('@._settings.disableClientImageResizing') }}
-					<template #desc>{{ $t('@._settings.disableClientImageResizing-desc') }}</template>
 				</ui-switch>
 
 				<ui-switch v-if="$root.isMobile" v-model="disableViaMobile">{{ $t('@._settings.disable-via-mobile') }}</ui-switch>
@@ -386,6 +387,11 @@ export default Vue.extend({
 			set(value) { this.$store.commit('device/set', { key: 'deckColumnAlign', value }); }
 		},
 
+		visibilityColoring: {
+			get() { return this.$store.state.device.visibilityColoring || 'left'; },
+			set(value) { this.$store.commit('device/set', { key: 'visibilityColoring', value }); }
+		},
+
 		enableSounds: {
 			get() { return this.$store.state.device.enableSounds; },
 			set(value) { this.$store.commit('device/set', { key: 'enableSounds', value }); }
@@ -444,11 +450,6 @@ export default Vue.extend({
 		fetchOnScroll: {
 			get() { return this.$store.state.settings.fetchOnScroll; },
 			set(value) { this.$store.dispatch('settings/set', { key: 'fetchOnScroll', value }); }
-		},
-
-		disableClientImageResizing: {
-			get() { return !!this.$store.state.settings.disableClientImageResizing; },
-			set(value) { this.$store.dispatch('settings/set', { key: 'disableClientImageResizing', value }); }
 		},
 
 		rememberNoteVisibility: {
