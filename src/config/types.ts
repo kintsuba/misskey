@@ -60,11 +60,13 @@ export type Source = {
 	inboxJobMaxAttempts?: number;
 
 	mecabSearch?: {
-		mecabBin: string;
-		mecabDic: string;
+		mecabBin?: string;
+		mecabDic?: string;
+		mecabServer?: string;
 	};
 
 	icons?: Icons
+	themeColor?: string;
 };
 
 export type DriveConfig = {

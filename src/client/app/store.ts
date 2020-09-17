@@ -71,6 +71,7 @@ const defaultDeviceSettings = Object.assign({
 	navbar: 'top',
 	mobileNotificationPosition: 'bottom',
 	disableShowingAnimatedImages: true,
+	disableShowingInstanceInfo: false,
 	expandUsersPhotos: true,
 	expandUsersActivity: true,
 	showPostPreview: true,
@@ -80,6 +81,7 @@ const defaultDeviceSettings = Object.assign({
 	activeEmojiCategoryName: undefined,
 	recentEmojis: [],
 	appType: 'auto',
+	emojiSkinTone: null,
 }, mods.defaultDeviceSettings || {});
 
 export default (os: MiOS) => new Vuex.Store({

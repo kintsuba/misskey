@@ -21,7 +21,7 @@ export async function proxyMedia(ctx: Router.RouterContext) {
 
 		let image: IImage;
 
-		if ('static' in ctx.query && ['image/png', 'image/apng', 'image/gif'].includes(mime)) {
+		if ('static' in ctx.query && ['image/png', 'image/apng', 'image/gif', 'image/webp'].includes(mime)) {
 			image = await convertToPng(path, 530, 255);
 		} else if ('preview' in ctx.query && ['image/jpeg', 'image/png', 'image/apng', 'image/gif', 'image/webp'].includes(mime)) {
 			image = await convertToJpeg(path, 200, 200);
@@ -35,7 +35,7 @@ export async function proxyMedia(ctx: Router.RouterContext) {
 
 		ctx.body = image.data;
 		ctx.set('Content-Type', image.type);
-		ctx.set('Cache-Control', 'max-age=31536000, immutable');
+		ctx.set('Cache-Control', 'max-age=604800, immutable');
 	} catch (e) {
 		serverLogger.error(e);
 

@@ -8,7 +8,7 @@ import renderCreate from '../../remote/activitypub/renderer/create';
 import renderAnnounce from '../../remote/activitypub/renderer/announce';
 import { renderActivity } from '../../remote/activitypub/renderer';
 import DriveFile, { IDriveFile } from '../../models/drive-file';
-import notify from '../../services/create-notification';
+import { createNotification } from '../../services/create-notification';
 import NoteWatching from '../../models/note-watching';
 import watch from './watch';
 import { parse } from '../../mfm/parse';
@@ -66,6 +66,14 @@ class NotificationManager {
 			}
 		}
 
+		const existMention = this.queue.find(x => x.target.equals(notifiee) && x.reason == 'mention');
+
+		if (existMention) {
+			if (reason == 'quote') {
+				return;
+			}
+		}
+
 		this.queue.push({
 			reason: reason,
 			target: notifiee
@@ -85,7 +93,7 @@ class NotificationManager {
 				continue;
 			}
 
-			notify(x.target, this.notifier._id, x.reason, {
+			createNotification(x.target, this.notifier._id, x.reason, {
 				noteId: this.note._id
 			});
 		}
@@ -311,7 +319,7 @@ export default async (user: IUser, data: Option, silent = false) => new Promise<
 	}
 
 	if (data.renote) {
-		incRenoteCount(data.renote);
+		incRenoteCount(data.renote, user);
 	}
 
 	if (isQuote(note)) {
@@ -454,11 +462,11 @@ async function renderNoteOrRenoteActivity(data: Option, note: INote, user: IUser
 	return renderActivity(content);
 }
 
-function incRenoteCount(renote: INote) {
+function incRenoteCount(renote: INote, user: IUser) {
 	Note.update({ _id: renote._id }, {
 		$inc: {
 			renoteCount: 1,
-			score: 1
+			score: user.isBot ? 0 : 1
 		}
 	});
 }

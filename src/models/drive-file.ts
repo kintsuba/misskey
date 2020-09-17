@@ -2,12 +2,12 @@ import * as mongo from 'mongodb';
 import * as deepcopy from 'deepcopy';
 import { pack as packFolder } from './drive-folder';
 import { pack as packUser } from './user';
-import monkDb, { nativeDbConn } from '../db/mongodb';
+import db, { nativeDbConn } from '../db/mongodb';
 import isObjectId from '../misc/is-objectid';
 import getDriveFileUrl, { getOriginalUrl } from '../misc/get-drive-file-url';
 import { dbLogger } from '../db/logger';
 
-const DriveFile = monkDb.get<IDriveFile>('driveFiles.files');
+const DriveFile = db.get<IDriveFile>('driveFiles.files');
 DriveFile.createIndex('md5');
 DriveFile.createIndex('metadata.uri');
 DriveFile.createIndex('metadata.userId');
@@ -15,7 +15,7 @@ DriveFile.createIndex('metadata.folderId');
 DriveFile.createIndex('metadata._user.host');
 export default DriveFile;
 
-export const DriveFileChunk = monkDb.get('driveFiles.chunks');
+export const DriveFileChunk = db.get('driveFiles.chunks');
 
 export const getDriveFileBucket = async (): Promise<mongo.GridFSBucket> => {
 	const db = await nativeDbConn();
@@ -145,14 +145,14 @@ export const packMany = (
 /**
  * Pack a drive file for API response
  */
-export const pack = (
+export const pack = async (
 	file: any,
 	options?: {
 		detail?: boolean,
 		self?: boolean,
 		withUser?: boolean,
 	}
-) => new Promise<any>(async (resolve, reject) => {
+) => {
 	const opts = Object.assign({
 		detail: false,
 		self: false
@@ -176,7 +176,7 @@ export const pack = (
 	// (データベースの欠損などで)ファイルがデータベース上に見つからなかったとき
 	if (_file == null) {
 		dbLogger.warn(`[DAMAGED DB] (missing) pkg: driveFile :: ${file}`);
-		return resolve(null);
+		return null;
 	}
 
 	// rendered target
@@ -235,5 +235,5 @@ export const pack = (
 		_target.url = getOriginalUrl(_file);
 	}
 
-	resolve(_target);
-});
+	return _target;
+};

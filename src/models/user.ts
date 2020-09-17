@@ -18,6 +18,8 @@ import getDriveFileUrl from '../misc/get-drive-file-url';
 import UserFilter from './user-filter';
 import { transform } from '../misc/cafy-id';
 import Usertag from './usertag';
+import { registerOrFetchInstanceDoc } from '../services/register-or-fetch-instance-doc';
+import { toApHost } from '../misc/convert-host';
 
 const User = db.get<IUser>('users');
 
@@ -177,12 +179,20 @@ export interface ILocalUser extends IUserBase {
 	twoFactorEnabled: boolean;
 	twoFactorTempSecret?: string;
 	clientSettings: any;
-	settings: {
+	settings?: {
 		autoWatch: boolean;
 		alwaysMarkNsfw?: boolean;
+		pushNotifications?: Record<string, boolean | undefined>;
 	};
 	hasUnreadNotification: boolean;
 	hasUnreadMessagingMessage: boolean;
+}
+
+export function getPushNotificationsValue(pushNotifications: Record<string, boolean | undefined> | undefined, key: string) {
+	if (pushNotifications == null) return true;
+	const value = pushNotifications[key];
+	if (value == null) return true;
+	return value;
 }
 
 export interface IRemoteUser extends IUserBase {
@@ -233,6 +243,7 @@ export function isValidLocation(location: string): boolean {
 }
 
 export function isValidBirthday(birthday: string): boolean {
+	// eslint-disable-next-line no-useless-escape
 	return typeof birthday == 'string' && /^([0-9]{4})\-([0-9]{2})-([0-9]{2})$/.test(birthday);
 }
 //#endregion
@@ -301,7 +312,7 @@ export async function getRelation(me: mongo.ObjectId, target: mongo.ObjectId) {
  * @param options? serialize options
  * @return Packed user
  */
-export const pack = (
+export const pack = async (
 	user: string | mongo.ObjectID | IUser,
 	me?: string | mongo.ObjectID | IUser,
 	options?: {
@@ -309,7 +320,7 @@ export const pack = (
 		includeSecrets?: boolean,
 		includeHasUnreadNotes?: boolean
 	}
-) => new Promise<any>(async (resolve, reject) => {
+) => {
 	const opts = Object.assign({
 		detail: false,
 		includeSecrets: false
@@ -351,7 +362,7 @@ export const pack = (
 	// (データベースの欠損などで)ユーザーがデータベース上に見つからなかったとき
 	if (_user == null) {
 		dbLogger.warn(`user not found on database: ${user}`);
-		return resolve(null);
+		return null;
 	}
 
 	// Me
@@ -478,6 +489,30 @@ export const pack = (
 		delete _user.hasUnreadMentions;
 	}
 
+	const fetchInstance = async () => {
+		if (_user.host == null) return null;
+
+		const info = {
+			host: null as unknown,
+			name: null as unknown,
+			softwareName: null as unknown,
+			softwareVersion: null as unknown,
+			iconUrl: null as unknown,
+			themeColor: null as unknown,
+		};
+
+		const instance = await registerOrFetchInstanceDoc(_user.host);
+		info.host = toApHost(_user.host);
+		info.name = instance?.name || null;
+		info.softwareName = instance?.softwareName || null;
+		info.softwareVersion = instance?.softwareVersion || null;
+		info.iconUrl = instance?.iconUrl || null;
+		info.themeColor = instance?.themeColor || null;
+		return info;
+	};
+
+	_user.instance = fetchInstance();
+
 	// カスタム絵文字添付
 	if (_user.emojis) {
 		_user.emojis = packEmojis(_user.emojis, _user.host).catch(e => {
@@ -489,8 +524,8 @@ export const pack = (
 	// resolve promises in _user object
 	_user = await rap(_user);
 
-	resolve(_user);
-});
+	return _user;
+};
 
 /*
 function img(url) {
